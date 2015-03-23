@@ -1,4 +1,6 @@
-from pprint import pprint
+'''
+DOCUMENTATION goes here
+'''
 
 symbolTable = {
 	"program" : {
@@ -10,9 +12,6 @@ symbolTable = {
 
 offsetStack	= [0]
 scopeStack	= [symbolTable["program"]]
-
-def printSymbolTable():
-	pprint(symbolTable)
 
 def lookup(identifier):
 	global scopeStack
@@ -35,8 +34,56 @@ def getCurrentScope():
 	return scopeStack[len(scopeStack) - 1]["scopeName"]
 	# ensure every scope has this key
 
+def addScope(scopeName):
+	global scopeStack
+	currentScope = scopeStack[len(scopeStack) - 1]
+	currentScope[scopeName] = {
+		"scopeName"		: scopeName,
+		"parentName"	: currentScope["scopeName"],
+		"type"			: "function",
+		"returnType"	: "none"
+	}
+	scopeStack.append(currentScope[scopeName])
 
+	# start new relative addressing
+	offsetStack.append(0)
 
+def addIdentifier(identifier, identifierType):
+	global scopeStack
+	currentScope = scopeStack[len(scopeStack) - 1]
+	if identifierType == 'NUMBER':
+		width = 4
+	elif identifierType == 'STRING':
+		width = 256
+	# TODO Add other types
 
+	if not identifier in currentScope:
+		currentScope[identifier] = dict()
+	currentScope[identifier]["offset"] = width
+	currentScope[identifier]["type"] = identifierType
 
-# print getCurrentScope()
+	currentOffset = offsetStack.pop() + width
+	offsetStack.append(currentOffset)
+
+def addAttribute(identifier, key, value):
+	entry = lookup(identifier)
+	entry[key] = value
+
+def getAttribute(identifier, key):
+	entry = lookup(identifier)
+	if key in entry:
+		return entry[key]
+	else:
+		return None
+
+def exists(identifier):
+	if lookup(identifier) != None:
+		return True
+	return False
+
+def removeCurrentScope():
+	global scopeStack
+	currentScope = scopeStack.pop()
+	currentScope["width"] = offsetStack.pop()
+
+print scopeStack
