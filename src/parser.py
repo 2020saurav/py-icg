@@ -9,6 +9,8 @@ import sys
 def p_file_input(p):
 	"""file_input :	single_stmt ENDMARKER
 	"""
+	# print p[]1
+
 # Our temporary symbol
 def p_single_stmt(p):
 	"""single_stmt	:	single_stmt NEWLINE
@@ -494,14 +496,15 @@ class G1Parser(object):
 
 if __name__=="__main__":
 	z = G1Parser()
-	filename = sys.argv[1]
+	# filename = sys.argv[1]
+	filename = "../test/test1.py"
 	sourcefile = open(filename)
 	data = sourcefile.read()
 	sys.stderr = open('dump','w')
 	root =  z.parse(data)
 	sys.stderr.close()
-	call(["python","bin/converter.py", filename])
-	s = filename
-	fname = s[s.find("/")+1:s.find(".py")]
-	call(["dot","-Tpng",fname+".dot","-o",fname+".png"])
-	call(["gnome-open",fname+".png"])
+	# call(["python","bin/converter.py", filename])
+	# s = filename
+	# fname = s[s.find("/")+1:s.find(".py")]
+	# call(["dot","-Tpng",fname+".dot","-o",fname+".png"])
+	# call(["gnome-open",fname+".png"])
