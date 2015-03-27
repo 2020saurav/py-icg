@@ -4,14 +4,14 @@ import lexer # our lexer
 tokens = lexer.tokens
 from subprocess import call
 import sys
-import tac as TAC
-import symbolTable as ST
+from tac import *
+from symbolTable import *
 # file_input: (NEWLINE | stmt)* ENDMARKER
 def p_file_input(p):
 	"""file_input :	single_stmt ENDMARKER
 	"""
 	p[0] = p[1]
-	TAC.printCode()
+	# TAC.printCode()
 
 # Our temporary symbol
 def p_single_stmt(p):
@@ -160,8 +160,9 @@ def p_print_stmt(p):
 	"""
 
 # pass_stmt: 'pass'
-def p_pass_stmt(p):
-	"pass_stmt : PASS"
+## CHANGING GRAMMAR : No longer needed
+# def p_pass_stmt(p):
+# 	"pass_stmt : PASS"
 
 # flow_stmt: break_stmt | continue_stmt | return_stmt 
 def p_flow_stmt(p):
@@ -218,6 +219,7 @@ def p_compound_stmt(p):
 						| funcdef
 						| classdef
 	"""
+	p[0] = p[1]
 
 # if_stmt: 'if' test ':' suite ('elif' test ':' suite)* ['else' ':' suite]
 # def p_if_stmt(p):
@@ -243,8 +245,24 @@ def p_if_stmt(p):
 # 	"""
 ## CHANGING GRAMMAR : Removing ELSE from WHILE statement
 def p_while_stmt(p):
-	"""while_stmt 	:	WHILE test COLON suite 
+	"""while_stmt 	:	WHILE Marker test COLON Marker suite 
 	"""
+	if p[3]['type'] != 'BOOLEAN':
+		typeError(p)
+	
+	p[0] = dict()
+	p[0]['type'] = 'VOID'
+	backpatch(p[6]['nextlist'], p[2]['quad'])
+	backpatch(p[3]['truelist'], p[5]['quad'])
+	p[0]['nextlist'] = p[3]['falselist']
+	emit('', '', p[2]['quad'], 'GOTO')
+ 
+def p_Marker(p):
+	"""Marker 		:	
+	"""
+	p[0] = dict()
+	currentScope = getCurrentScope()
+	p[0]['quad'] = getNextQuad(currentScope)
 # for_stmt: 'for' exprlist 'in' testlist ':' suite ['else' ':' suite]
 # def p_for_stmt(p): 
 # 	"""for_stmt 	:	FOR exprlist IN testlist COLON suite
@@ -488,11 +506,12 @@ def p_sliceop(p):
 	"""
 
 # exprlist: expr (',' expr)* [',']
-def p_exprlist(p):
-	"""exprlist 	: expr
-					| expr COMMA
-					| expr COMMA exprlist
-	"""
+## CHANGING GRAMMAR : MAY MAY MAY not be needed.
+# def p_exprlist(p):
+# 	"""exprlist 	: expr
+# 					| expr COMMA
+# 					| expr COMMA exprlist
+# 	"""
 
 # testlist: test (',' test)* [',']
 def p_testlist(p):
@@ -547,6 +566,10 @@ def p_error(p):
     print "Syntax Error near '"+str(p.value)+ "' in line "+str(p.lineno)
     sys.exit()
 
+def typeError(p):
+	print "Type Error near '"+str(p.value)+"' in line "+str(p.lineno)
+	sys.exit()
+
 class G1Parser(object):
 	def __init__(self, mlexer=None):
 		if mlexer is None:
@@ -567,8 +590,8 @@ if __name__=="__main__":
 	sys.stderr = open('dump','w')
 	root =  z.parse(data)
 	sys.stderr.close()
-	# call(["python","bin/converter.py", filename])
-	# s = filename
-	# fname = s[s.find("/")+1:s.find(".py")]
-	# call(["dot","-Tpng",fname+".dot","-o",fname+".png"])
-	# call(["gnome-open",fname+".png"])
+	call(["python","converter.py", filename])
+	s = filename
+	fname = "../"+s[s.find("/")+1:s.find(".py")]
+	call(["dot","-Tpng",fname+".dot","-o",fname+".png"])
+	call(["gnome-open",fname+".png"])

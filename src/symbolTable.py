@@ -5,8 +5,8 @@ DOCUMENTATION goes here
 symbolTable = {
 	"program" : {
 		"scopeName"		: "program",
-		"type"			: "function",
-		"returnType"	: "none",
+		"type"			: "FUNCTION",
+		"returnType"	: "UNDEFINED",
 	}
 }
 
@@ -40,8 +40,8 @@ def addScope(scopeName):
 	currentScope[scopeName] = {
 		"scopeName"		: scopeName,
 		"parentName"	: currentScope["scopeName"],
-		"type"			: "function",
-		"returnType"	: "none"
+		"type"			: "FUNCTION",
+		"returnType"	: "UNDEFINED"
 	}
 	scopeStack.append(currentScope[scopeName])
 

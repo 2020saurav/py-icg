@@ -1,7 +1,7 @@
 #Code stores array of all three address codes
-code = {'program':[]}
-# quad = {'program':-1}
-# nextQuad = {"program":0}
+code = {'program': []}
+quad = {'program': -1}
+nextQuad = {"program": 0}
 
 tempVarBaseName = "var"
 varCount = 0
@@ -11,28 +11,28 @@ def getNewTempVar():
 	varCount += 1
 	return tempVarBaseName + str(varCount)
 
-
-# def incrementQuad(functionName):
-# 	global quad
-# 	quad[functionName] = quad[functionName] + 1
-# 	return quad[functionName]
+def incrementQuad(functionName):
+	global quad
+	quad[functionName] = nextQuad[functionName]
+	nextQuad[functionName] += 1
+	return quad[functionName]
 
 def getNextQuad(functionName):
-	# return quad[functionName] + 1
-	return len(code[functionName])
+	return nextQuad[functionName]
 
 def getCodeLength(functionName):
-	return len(code[functionName]) - 1
+	return quad[functionName]
 
-def emitCode(functionName, regDest, regSrc1, regSrc2, op):
+def emit(functionName, regDest, regSrc1, regSrc2, op):
 	global code
+	incrementQuad(functionName)
 	code[functionName].append([regDest, regSrc1, regSrc2, op])
-	# incrementQuad(functionName)
 
 def createNewFucntionCode(functionName):
 	global code , quad
-	# quad[functionName] = -1
 	code[functionName] = []
+	quad[functionName] = -1
+	nextQuad[functionName] = 0
 
 def printCode():
 	for functionName in code.keys():
