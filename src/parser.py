@@ -247,15 +247,15 @@ def p_if_stmt(p):
 def p_while_stmt(p):
 	"""while_stmt 	:	WHILE Marker test COLON Marker suite 
 	"""
-	if p[3]['type'] != 'BOOLEAN':
-		typeError(p)
+	# if p[3]['type'] != 'BOOLEAN':
+	# 	typeError(p)
 	
-	p[0] = dict()
-	p[0]['type'] = 'VOID'
-	backpatch(p[6]['nextlist'], p[2]['quad'])
-	backpatch(p[3]['truelist'], p[5]['quad'])
-	p[0]['nextlist'] = p[3]['falselist']
-	emit('', '', p[2]['quad'], 'GOTO')
+	# p[0] = dict()
+	# p[0]['type'] = 'VOID'
+	# backpatch(p[6]['nextlist'], p[2]['quad'])
+	# backpatch(p[3]['truelist'], p[5]['quad'])
+	# p[0]['nextlist'] = p[3]['falselist']
+	# emit('', '', p[2]['quad'], 'GOTO')
  
 def p_Marker(p):
 	"""Marker 		:	
@@ -287,48 +287,97 @@ def p_suite(p):
 def p_test(p):
 	"""test 	: or_test
 	"""
+	p[0] = p[1]
 
 
 # or_test: and_test ('or' and_test)*
 def p_or_test(p):
 	"""or_test 	: and_test ortestlist
 	"""
+	p[0] = p[1]
+	# TODO Correct this
+	# Ignoring ortestlist for now
 
 # our new symbol
 def p_ortestlist(p):
 	"""ortestlist 	:
 					| OR and_test ortestlist
 	"""
+	# TODO Correct this
+	# no semantic action for now
 
 # and_test: not_test ('and' not_test)*
 def p_and_test(p):
 	"""and_test 	: not_test andtestlist
 	"""
+	p[0] = p[1]
+	# TODO Correct this
+	# Ignoring ortestlist for now	
 
 #our new symbol
 def p_andtestlist(p):
 	"""andtestlist 	:
 					| AND not_test andtestlist
 	"""
+	# TODO Correct this
+	# no semantic action for now
 
 # not_test: 'not' not_test | comparison
 def p_not_test(p):
 	"""not_test 	: NOT not_test
 					| comparison
 	"""
+	if len(p)==2:
+		p[0] = p[1]
+	else:
+		pass
+		# TODO Implement this
 
 # comparison: expr (comp_op expr)*
+# def p_comparision(p):
+# 	"""comparison 	: expr compexprlist
+# 	"""
+## CHANGING GRAMMAR : comparision expression shortened, one at a time
 def p_comparision(p):
-	"""comparison 	: expr compexprlist
+	"""comparison 	: 	expr
+					|	expr comp_op expr
 	"""
+	if len(p)==2:
+		p[0] = p[1]
+	elif len(p)==4:
+		# TODO support FNUMBER too
+		if p[1]['type'] == p[3]['type']=='NUMBER':
+			pass
+			# okay : Nothing to do here
+		else:
+			typeError(p)
+		p[0] = dict()
+		p[0]['type'] = 'BOOLEAN'
+		p[0]['place'] = getNewTempVar()
+		emit(p[0]['place'], p[1]['place'], p[3]['place'], p[2])
 
+
+## CHANGING GRAMMAR : No longer needed
 # our new symbol
-def p_compexprlist(p):
-	"""compexprlist 	:
-						| comp_op expr compexprlist
-	"""
+# def p_compexprlist(p):
+# 	"""compexprlist 	:
+# 						| comp_op expr compexprlist
+# 	"""
 
 # comp_op: '<'|'>'|'=='|'>='|'<='|'!='|'in'|'not' 'in'|'is'|'is' 'not'
+# def p_comp_op(p):
+# 	"""comp_op 	: LESS
+# 				| GREATER
+# 				| EQEQUAL
+# 				| GREATEREQUAL
+# 				| LESSEQUAL
+# 				| NOTEQUAL
+# 				| IN
+# 				| NOT IN
+# 				| IS
+# 				| IS NOT
+# 	"""
+## CHANGING GRAMMAR : Withdrawing support of IN and IS
 def p_comp_op(p):
 	"""comp_op 	: LESS
 				| GREATER
@@ -336,97 +385,146 @@ def p_comp_op(p):
 				| GREATEREQUAL
 				| LESSEQUAL
 				| NOTEQUAL
-				| IN
-				| NOT IN
-				| IS
-				| IS NOT
 	"""
+	p[0] = p[1]
 
 # expr: xor_expr ('|' xor_expr)*
+# def p_expr(p):
+# 	"""expr 	: xor_expr xorexprlist
+# 	"""
+## CHANGING GRAMMAR : Not usually : VBAR or xor. MAY BRING BACK LATER
 def p_expr(p):
-	"""expr 	: xor_expr xorexprlist
+	"""expr 	: xor_expr
 	"""
-
+	p[0] = p[1]
+# CHANGING GRAMMAR : No longer needed, unless above grammar is reverted.
 # our new symbol
-def p_xorexprlist(p):
-	"""xorexprlist 	:
-					|	VBAR xor_expr xorexprlist
-	"""
+# def p_xorexprlist(p):
+# 	"""xorexprlist 	:
+# 					|	VBAR xor_expr xorexprlist
+# 	"""
 
 # xor_expr: and_expr ('^' and_expr)*
+# def p_xor_expr(p):
+# 	"""xor_expr 	: and_expr andexprlist
+# 	"""
+## CHANGING GRAMMAR : same reason as above. May need to revert for feature addition
 def p_xor_expr(p):
-	"""xor_expr 	: and_expr andexprlist
+	"""xor_expr 	: and_expr
 	"""
-
+	p[0] = p[1]
 # our new symbol
-def p_andexprlist(p):
-	"""andexprlist 	:
-					| CIRCUMFLEX and_expr andexprlist
-	"""
-
+# def p_andexprlist(p):
+# 	"""andexprlist 	:
+# 					| CIRCUMFLEX and_expr andexprlist
+# 	"""
+# CHANGING GRAMMAR : No longer needed, unless above grammar is reverted.
 # and_expr: shift_expr ('&' shift_expr)*
-def p_and_expr(p):
-	"""and_expr 	: shift_expr shiftexprlist
-	"""
+# def p_and_expr(p):
+# 	"""and_expr 	: shift_expr shiftexprlist
+# 	"""
+## CHANGING GRAMMAR : same reason as above. May need to revert for feature addition
 
-# our new symbol
-def p_shiftexprlist(p):
-	"""shiftexprlist 	:
-						| AMPER shift_expr shiftexprlist
+def p_and_expr(p):
+	"""and_expr 	: shift_expr
 	"""
+	p[0] = p[1]
+# CHANGING GRAMMAR : No longer needed, unless above grammar is reverted.
+# our new symbol
+# def p_shiftexprlist(p):
+# 	"""shiftexprlist 	:
+# 						| AMPER shift_expr shiftexprlist
+# 	"""
 
 # shift_expr: arith_expr (('<<'|'>>') arith_expr)*
+# def p_shift_expr(p):
+# 	"""shift_expr 	: arith_expr arithexprlist
+# 	"""
+## CHANGING GRAMMAR : same reason as above. May need to revert for feature addition
 def p_shift_expr(p):
-	"""shift_expr 	: arith_expr arithexprlist
+	"""shift_expr 	: arith_expr
 	"""
-
+	p[0] = p[1]
+# CHANGING GRAMMAR : No longer needed, unless above grammar is reverted.
 # our new symbol
-def p_arithexprlist(p):
-	"""arithexprlist 	:
-						| LEFTSHIFT arith_expr arithexprlist
-						| RIGHTSHIFT arith_expr arithexprlist
-	"""
+# def p_arithexprlist(p):
+# 	"""arithexprlist 	:
+# 						| LEFTSHIFT arith_expr arithexprlist
+# 						| RIGHTSHIFT arith_expr arithexprlist
+# 	"""
 
 # arith_expr: term (('+'|'-') term)*
+# def p_arith_expr(p):
+# 	"""arith_expr 	:	term termlist
+# 	"""
+## CHANGING GRAMMAR : simplify grammar to support simple binary operations
 def p_arith_expr(p):
-	"""arith_expr 	:	term termlist
+	"""arith_expr 	:	term
+					|	term PLUS term
+					|	term MINUS term
 	"""
+	if len(p)==2:
+		p[0] = p[1]
+	else:
+		# TODO support FNUMBER
+		if p[1]['type'] == p[3]['type'] == 'NUMBER':
+			p[0] = dict()
+			p[0]['place'] = getNewTempVar()
+			p[0]['type'] = 'NUMBER'
+			emit(p[0]['place'], p[1]['place'], p[3]['place'], p[2])
+		else:
+			typeError(p)
 
+
+# CHANGING GRAMMAR : no longer needed if above simplified grammar is used
 # our new symbol
-def p_termlist(p):
-	"""termlist 	:
-					| PLUS term termlist
-					| MINUS term termlist
-	"""
+# def p_termlist(p):
+# 	"""termlist 	:
+# 					| PLUS term termlist
+# 					| MINUS term termlist
+# 	"""
 
 # term: factor (('*'|'/'|'%'|'//') factor)*
+# def p_term(p):
+# 	"""term :	factor factorlist
+# 	"""
+# CHANGING GRAMMAR : simplifying binary ops
 def p_term(p):
-	"""term :	factor factorlist
+	"""term :	factor
+			|	factor STAR factor
+			|	factor SLASH factor
+			|	factor PERCENT factor
 	"""
-
+# CHANGING GRAMMAR 	: not needed because of above simplification
 # our new symbol
-def p_factorlist(p):
-	"""factorlist 	:
-					| STAR factor factorlist
-					| SLASH factor factorlist
-					| PERCENT factor factorlist
-					| SLASHSLASH factor factorlist
-	"""
+# def p_factorlist(p):
+# 	"""factorlist 	:
+# 					| STAR factor factorlist
+# 					| SLASH factor factorlist
+# 					| PERCENT factor factorlist
+# 					| SLASHSLASH factor factorlist
+# 	"""
 
 # factor: ('+'|'-'|'~') factor | power
+# def p_factor(p):
+# 	"""factor 	: power
+# 				| PLUS factor
+# 				| MINUS factor
+# 				| TILDE factor
+# 	"""
+## CHANGING GRAMMAR : NOT VERY CONFIDENT : +-~ doesn't seem to be useful to me.
 def p_factor(p):
 	"""factor 	: power
-				| PLUS factor
-				| MINUS factor
-				| TILDE factor
 	"""
-
 # power: atom trailer* ['**' factor]
+# def p_power(p):
+# 	"""power 	: atom trailerlist
+# 				| atom trailerlist STARSTAR factor
+# 	"""
+# CHANGING GRAMMAR : removing power operation
 def p_power(p):
 	"""power 	: atom trailerlist
-				| atom trailerlist STARSTAR factor
 	"""
-
 # our new symbol
 def p_trailerlist(p):
 	"""trailerlist 	: 
