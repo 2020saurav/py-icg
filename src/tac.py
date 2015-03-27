@@ -34,9 +34,9 @@ def createNewFucntionCode(functionName):
 	# quad[functionName] = -1
 	code[functionName] = []
 
-def printcode():
+def printCode():
 	for functionName in code.keys():
-		print "\n",functionName,":"
+		print functionName,":"
 		for i in range(len(code[functionName])):
 			print  "%5d: \t" %i, code[functionName][i]
 

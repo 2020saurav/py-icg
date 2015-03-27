@@ -22,7 +22,7 @@ def lookupScopeStack(identifier, position):
 	if position == -1:
 		return None
 	global scopeStack
-	currentScope = scopeStack[len(scopeStack) - 1]
+	currentScope = scopeStack[position]
 	# if sought identifier is not in current scope, it may be in parent
 	if identifier in currentScope:
 		return currentScope[identifier]
@@ -86,4 +86,4 @@ def removeCurrentScope():
 	currentScope = scopeStack.pop()
 	currentScope["width"] = offsetStack.pop()
 
-print scopeStack
+# print scopeStack

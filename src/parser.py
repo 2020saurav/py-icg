@@ -4,19 +4,29 @@ import lexer # our lexer
 tokens = lexer.tokens
 from subprocess import call
 import sys
-
+import tac as TAC
+import symbolTable as ST
 # file_input: (NEWLINE | stmt)* ENDMARKER
 def p_file_input(p):
 	"""file_input :	single_stmt ENDMARKER
 	"""
-	# print p[]1
+	p[0] = p[1]
+	TAC.printCode()
 
 # Our temporary symbol
 def p_single_stmt(p):
 	"""single_stmt	:	single_stmt NEWLINE
-					|	single_stmt stmt
 					|
 	"""
+	if len(p) == 3:
+		p[0] = p[1]
+	else:
+		p[0] = []
+
+def p_single_stmt1(p):
+	"""single_stmt	:	single_stmt stmt
+	"""
+	p[0] = p[1] + [p[2]]
 
 # funcdef: [decorators] 'def' NAME parameters ':' suite
 def p_funcdef(p):
@@ -64,54 +74,84 @@ def p_stmt(p):
 	"""stmt 	: simple_stmt
 				| compound_stmt
 	"""
+	p[0] = p[1]
 
 # simple_stmt: small_stmt (';' small_stmt)* [';'] NEWLINE
+# def p_simple_stmt(p):
+# 	"""simple_stmt 	: small_stmts NEWLINE
+# 					| small_stmts SEMI NEWLINE
+# 	"""
+## CHANGING GRAMMAR : SEMI COLON NOT ALLOWED NOW
 def p_simple_stmt(p):
 	"""simple_stmt 	: small_stmts NEWLINE
-					| small_stmts SEMI NEWLINE
 	"""
+	p[0] = p[1]
 
 # our temp symbol
+# def p_small_stmts(p):
+# 	"""small_stmts 	: small_stmts SEMI small_stmt
+# 					| small_stmt
+# 	"""
+## CHANGING GRAMMAR : SEMI COLON NOT ALLOWED NOW
 def p_small_stmts(p):
-	"""small_stmts 	: small_stmts SEMI small_stmt
-					| small_stmt
+	"""small_stmts 	: small_stmt
 	"""
+	p[0] = p[1]
 
 # small_stmt: 	expr_stmt 	| print_stmt   	| 
 #			  	pass_stmt 	| flow_stmt 	|assert_stmt|
 #    			import_stmt | global_stmt 	
 
+# def p_small_stmt(p):
+# 	"""small_stmt 	: flow_stmt
+# 					| expr_stmt
+# 					| print_stmt
+# 					| pass_stmt
+# 					| import_stmt
+# 					| global_stmt
+# 					| assert_stmt
+# 					"""
+## CHANGING GRAMMAR : pass, import, global, assert : not urgent
 def p_small_stmt(p):
 	"""small_stmt 	: flow_stmt
 					| expr_stmt
 					| print_stmt
-					| pass_stmt
-					| import_stmt
-					| global_stmt
-					| assert_stmt
-					"""
+	"""
+	p[0] = p[1]
+
 
 # expr_stmt: testlist (augassign testlist | ('=' testlist)*)
+# def p_expr_stmt(p):
+# 	"""expr_stmt 	: testlist augassign testlist
+# 					| testlist eqtestlist
+# 	"""
+## CHANGING GRAMMAR : Removing fancy operations
+## CHANGING GRAMMAR : Removing list assignment multiple
 def p_expr_stmt(p):
-	"""expr_stmt 	: testlist augassign testlist
-					| testlist eqtestlist
+	"""expr_stmt 	: test EQUAL test
 	"""
+	# TODO MARKER NEEDED HERE?
+	# TODO add semantic action here.
+	# TODO Add functions for identifier declaration and assignment
+
 # our new symbol
-def p_eqtestlist(p):
-	"""eqtestlist 	:
-					| eqtestlist EQUAL testlist
-	"""
+## CHANGING GRAMMAR : No longer required
+# def p_eqtestlist(p):
+# 	"""eqtestlist 	:
+# 					| eqtestlist EQUAL testlist
+# 	"""
 
 # augassign: ('+=' | '-=' | '*=' | '/=' | '%=' | '**=' | '//=')
-def p_augassign(p):
-	"""augassign 	: PLUSEQUAL 
-					| MINEQUAL 
-					| STAREQUAL 
-					| SLASHEQUAL 
-					| PERCENTEQUAL 
-					| STARSTAREQUAL 
-					| SLASHSLASHEQUAL 
-	"""
+## CHANGING GRAMMAR : No longer required
+# def p_augassign(p):
+# 	"""augassign 	: PLUSEQUAL 
+# 					| MINEQUAL 
+# 					| STAREQUAL 
+# 					| SLASHEQUAL 
+# 					| PERCENTEQUAL 
+# 					| STARSTAREQUAL 
+# 					| SLASHSLASHEQUAL 
+# 	"""
 
 # print_stmt: 'print' [ test (',' test)* [','] ]
 def p_print_stmt(p):
@@ -146,24 +186,29 @@ def p_return_stmt(p):
 					|	RETURN testlist
 	"""
 # import_stmt: 'import' NAME ['as' NAME]
-def p_import_stmt(p): 
-	"""import_stmt 	:	IMPORT NAME
-					|	IMPORT NAME AS NAME
-	"""
+## CHANGING GRAMMAR : No longer needed
+# def p_import_stmt(p): 
+# 	"""import_stmt 	:	IMPORT NAME
+# 					|	IMPORT NAME AS NAME
+# 	"""
 
 # global_stmt: 'global' NAME (',' NAME)*
-def p_global_stmt(p):
-	"""global_stmt 	: GLOBAL NAME namelist
-	"""
+## CHANGING GRAMMAR : No longer needed
+# def p_global_stmt(p):
+# 	"""global_stmt 	: GLOBAL NAME namelist
+# 	"""
 # our new symbol
-def p_namelist(p):
-	"""namelist 	: 
-					| COMMA NAME namelist
-	"""
+
+## CHANGING GRAMMAR : No longer needed
+# def p_namelist(p):
+# 	"""namelist 	: 
+# 					| COMMA NAME namelist
+# 	"""
 # assert_stmt: 'assert' test [',' test]
-def p_assert_stmt(p):
-	"""assert_stmt 	: ASSERT testlist
-	"""
+## CHANGING GRAMMAR : No longer needed
+# def p_assert_stmt(p):
+# 	"""assert_stmt 	: ASSERT testlist
+# 	"""
 
 # compound_stmt: if_stmt | while_stmt | for_stmt | funcdef | classdef 
 def p_compound_stmt(p):
@@ -175,37 +220,56 @@ def p_compound_stmt(p):
 	"""
 
 # if_stmt: 'if' test ':' suite ('elif' test ':' suite)* ['else' ':' suite]
+# def p_if_stmt(p):
+# 	"""if_stmt 	:	IF test COLON suite elif_list
+# 				|	IF test COLON suite elif_list ELSE COLON suite
+# 	"""
+## CHANGING GRAMMAR : Removing ELIF from grammar. User need to nest in blocks
 def p_if_stmt(p):
-	"""if_stmt 	:	IF test COLON suite elif_list
-				|	IF test COLON suite elif_list ELSE COLON suite
+	"""if_stmt 	:	IF test COLON suite
+				|	IF test COLON suite ELSE COLON suite
 	"""
 # our new symbol
-def p_elif_list(p):
-	"""elif_list 	:
-					| ELIF test COLON suite elif_list
-	"""
+## CHANGING GRAMMAR : No longer needed
+# def p_elif_list(p):
+# 	"""elif_list 	:
+# 					| ELIF test COLON suite elif_list
+# 	"""
 
 # while_stmt: 'while' test ':' suite ['else' ':' suite]
+# def p_while_stmt(p):
+# 	"""while_stmt 	:	WHILE test COLON suite 
+# 					|	WHILE test COLON suite ELSE COLON suite
+# 	"""
+## CHANGING GRAMMAR : Removing ELSE from WHILE statement
 def p_while_stmt(p):
 	"""while_stmt 	:	WHILE test COLON suite 
-					|	WHILE test COLON suite ELSE COLON suite
 	"""
 # for_stmt: 'for' exprlist 'in' testlist ':' suite ['else' ':' suite]
+# def p_for_stmt(p): 
+# 	"""for_stmt 	:	FOR exprlist IN testlist COLON suite
+# 					|	FOR exprlist IN testlist COLON suite ELSE COLON suite
+# 	"""
+## CHANGING GRAMMAR : Removing ELSE from FOR statement
+## CHANGING GRAMMAR : Simplifying for loop for single iterator
 def p_for_stmt(p): 
-	"""for_stmt 	:	FOR exprlist IN testlist COLON suite
-					|	FOR exprlist IN testlist COLON suite ELSE COLON suite
+	"""for_stmt 	:	FOR expr IN test COLON suite
 	"""
-
 # suite: simple_stmt | NEWLINE INDENT stmt+ DEDENT
 def p_suite(p):
 	"""suite 	: simple_stmt
 				| NEWLINE INDENT stmts DEDENT"""
 
 # test: or_test ['if' or_test 'else' test]
+# def p_test(p):
+# 	"""test 	: or_test
+# 				| or_test IF or_test ELSE test
+# 	"""
+## CHANGING GRAMMAR : Removing inline IF statements
 def p_test(p):
 	"""test 	: or_test
-				| or_test IF or_test ELSE test
 	"""
+
 
 # or_test: and_test ('or' and_test)*
 def p_or_test(p):
