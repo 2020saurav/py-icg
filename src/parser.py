@@ -113,11 +113,12 @@ def p_small_stmts(p):
 # 					"""
 ## CHANGING GRAMMAR : pass, import, global, assert : not urgent
 def p_small_stmt(p):
-	"""small_stmt 	: flow_stmt
-					| expr_stmt
-					| print_stmt
+	"""small_stmt 	: flow_stmt Marker
+					| expr_stmt Marker
+					| print_stmt Marker
 	"""
 	p[0] = p[1]
+	backpatch(getCurrentScope(), p[1].get('nextlist', []), p[2]['quad'])
 
 
 # expr_stmt: testlist (augassign testlist | ('=' testlist)*)
@@ -230,13 +231,16 @@ def p_return_stmt(p):
 
 # compound_stmt: if_stmt | while_stmt | for_stmt | funcdef | classdef 
 def p_compound_stmt(p):
-	"""compound_stmt 	: if_stmt
-						| for_stmt
-						| while_stmt
-						| funcdef
-						| classdef
+	"""compound_stmt 	: if_stmt Marker
+						| for_stmt Marker
+						| while_stmt Marker
+						| funcdef Marker
+						| classdef Marker
 	"""
 	p[0] = p[1]
+	nextlist = p[1].get('nextlist',[])
+	backpatch(getCurrentScope(),nextlist, p[2]['quad'])
+
 
 # if_stmt: 'if' test ':' suite ('elif' test ':' suite)* ['else' ':' suite]
 # def p_if_stmt(p):
@@ -248,6 +252,7 @@ def p_if_stmt(p):
 	"""if_stmt 	:	IF test COLON suite
 				|	IF test COLON suite ELSE COLON suite
 	"""
+
 # our new symbol
 ## CHANGING GRAMMAR : No longer needed
 # def p_elif_list(p):
@@ -269,10 +274,16 @@ def p_while_stmt(p):
 	
 	p[0] = dict()
 	p[0]['type'] = 'VOID'
-	backpatch(getCurrentScope(),p[6]['nextlist'], p[2]['quad'])
-	backpatch(getCurrentScope(),p[3]['truelist'], p[5]['quad'])
-	p[0]['nextlist'] = p[3]['falselist']
+	p[0]['nextlist'] = []
+	backpatch(getCurrentScope(), p[6]['beginlist'], p[2]['quad'])
+	p[0]['nextlist'] = merge(p[6].get('endlist', []), p[6].get('nextlist', []))
+	p[0]['nextlist'] = merge(p[5].get('falselist', []), p[0].get('nextlist', []))
 	emit(getCurrentScope(),'', '', p[2]['quad'], 'GOTO')
+	
+	# backpatch(getCurrentScope(),p[6]['nextlist'], p[2]['quad'])
+	# backpatch(getCurrentScope(),p[3]['truelist'], p[5]['quad'])
+	# p[0]['nextlist'] = p[6]['nextlist']
+	# p[0]['nextlist'] = merge(p[0]['nextlist'], p[3]['falselist'])
  
 def p_Marker(p):
 	"""Marker 		:	
@@ -284,9 +295,10 @@ def p_MarkerWhile(p):
 	"""MarkerWhile 	:
 	"""
 	p[0] = dict()
-	p[0]['quad'] = getNextQuad(getCurrentScope())
-	p[0]['falselist'] = getNextQuad(getCurrentScope())
-	emit(getCurrentScope(), p[-2]['place'],'',-1,'COND_GOTO') 
+	# p[0]['quad'] = getNextQuad(getCurrentScope())
+	p[0]['falselist'] = [getNextQuad(getCurrentScope())]
+	emit(getCurrentScope(), p[-2]['place'],'0',-1,'COND_GOTO') 
+	# TODO is it 0 or 1?
 # for_stmt: 'for' exprlist 'in' testlist ':' suite ['else' ':' suite]
 # def p_for_stmt(p): 
 # 	"""for_stmt 	:	FOR exprlist IN testlist COLON suite
@@ -745,15 +757,19 @@ def p_testlist1(p):
 	"""
 
 def p_stmts(p):
-	"""stmts 	: stmts Marker stmt
-				| stmt"""
-	if len(p) == 2:
-		p[0] = p[1]
-	else:
-		p[0] = dict()
-		p[0] = p[1] + [p[3]]
-		backpatch(getCurrentScope(),p[1]['nextlist'], p[2]['quad'])
-		p[0]['nextlist'] = p[3]['nextlist']
+	"""stmts 	: stmt stmts
+				| stmt Marker"""
+	p[0] = dict()
+	p[0]['beginlist'] = merge(p[1].get('beginlist', []), p[2].get('beginlist', []))
+	p[0]['endlist'] = merge(p[1].get('endlist', []), p[2].get('endlist', []))
+
+	# if len(p) == 2:
+	# 	p[0] = p[1]
+	# else:
+	# 	p[0] = dict()
+	# 	p[0] = p[1] + [p[3]]
+	# 	backpatch(getCurrentScope(),p[1]['nextlist'], p[2]['quad'])
+	# 	p[0]['nextlist'] = p[3]['nextlist']
 
 
 def p_error(p):
