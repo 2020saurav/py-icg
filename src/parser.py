@@ -149,7 +149,6 @@ def p_expr_stmt(p):
 	# printST()
 
 
-	# TODO add semantic action here.
 	# TODO Add functions for identifier declaration and assignment
 	# How about expr_stmt -> NAME EQUAL test ?
 # our new symbol
@@ -416,9 +415,6 @@ def p_comparision(p):
 	if len(p)==2:
 		p[0] = p[1]
 	elif len(p)==4:
-		# TODO support FNUMBER too
-		# print p[1]
-		# sys.exit()
 		if p[1]['type'] == p[3]['type']=='NUMBER':
 			pass
 			# okay : Nothing to do here
@@ -541,7 +537,6 @@ def p_arith_expr(p):
 	if len(p)==2:
 		p[0] = p[1]
 	else:
-		# TODO support FNUMBER
 		if p[1]['type'] == p[3]['type'] == 'NUMBER':
 			p[0] = dict()
 			p[0]['place'] = getNewTempVar()
@@ -573,7 +568,6 @@ def p_term(p):
 	if len(p)==2:
 		p[0] = p[1]
 	else:
-		# TODO support FNUMBER
 		if p[1]['type'] == p[3]['type'] == 'NUMBER':
 			p[0] = dict()
 			p[0]['place'] = getNewTempVar()
@@ -648,8 +642,6 @@ def p_atom(p):
 				| LBRACE RBRACE
 				| LBRACE dictorsetmaker RBRACE
 				| BACKQUOTE testlist1 BACKQUOTE
-				| FNUMBER
-				| stringlist
 	"""
 def p_atom1(p):
 	'''atom :	NAME
@@ -675,12 +667,28 @@ def p_atom2(p):
 	p[0]['place'] = p[1]
 	# need to do symbol table thing, type attribution
 # our new symbol
-def p_stringlist(p):
-	"""stringlist 	: STRING 
-					| STRING stringlist
-					| TRIPLESTRING
-					| TRIPLESTRING stringlist
+# def p_stringlist(p):
+# 	"""stringlist 	: STRING 
+# 					| STRING stringlist
+# 					| TRIPLESTRING
+# 					| TRIPLESTRING stringlist
+# 	"""
+
+def p_atom3(p):
+	"""atom		:	STRING
+				|	TRIPLESTRING
 	"""
+	p[0] = dict()
+	p[0]['type'] = 'STRING'
+	p[0]['place'] = p[1]
+
+def p_atom4(p):
+	'''atom :	FNUMBER
+	'''
+	p[0] = dict()
+	p[0]['type'] = 'NUMBER'
+	p[0]['place'] = p[1]
+
 
 # listmaker: test (',' test)* [','] 
 def p_listmaker(p):
@@ -802,11 +810,17 @@ def p_stmts(p):
 
 
 def p_error(p):
-    print "Syntax Error near '"+str(p.value)+ "' in line "+str(p.lineno)
-    sys.exit()
+	try:
+		print "Syntax Error near '"+str(p.value)+ "' in line "+str(p.lineno)
+	except:
+		print "Syntax Error"
+	sys.exit()
 
 def typeError(p):
-	print "Type Error near '"+str(p.value)+"' in line "+str(p.lineno)
+	try:
+		print "Type Error near '"+str(p.value)+"' in line "+str(p.lineno)
+	except:
+		print "Type Error"
 	sys.exit()
 
 def referenceError(p):
