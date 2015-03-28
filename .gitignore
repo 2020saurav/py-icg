@@ -7,3 +7,5 @@ dump
 parser.out
 parsetab.py
 .scribings
+test/*.dot
+test/*.png
