@@ -308,14 +308,14 @@ def p_MarkerWhile(p):
 	p[0] = dict()
 	# p[0]['quad'] = getNextQuad(getCurrentScope())
 	p[0]['falselist'] = [getNextQuad(getCurrentScope())]
-	emit(getCurrentScope(), p[-2]['place'],'0',-1,'COND_GOTO') 
+	emit(getCurrentScope(), p[-2]['place'], 0, -1,'COND_GOTO') 
 
 def p_MarkerIf(p):
 	"""MarkerIf 	:
 	"""
 	p[0] = dict()
 	p[0]['falselist'] = [getNextQuad(getCurrentScope())]
-	emit(getCurrentScope(), p[-2]['place'], '0', -1, 'COND_GOTO')
+	emit(getCurrentScope(), p[-2]['place'], 0, -1, 'COND_GOTO')
 
 def p_MarkerElse(p):
 	"""MarkerElse 	:
@@ -572,7 +572,7 @@ def p_term(p):
 			p[0] = dict()
 			p[0]['place'] = getNewTempVar()
 			p[0]['type'] = 'NUMBER'
-			emit(getCurrentScope(),p[0]['place'], p[1]['place'], p[3]['place'], p[2])
+			emit(getCurrentScope(), p[0]['place'], p[1]['place'], p[3]['place'], p[2])
 		else:
 			typeError(p)
 # CHANGING GRAMMAR 	: not needed because of above simplification
@@ -595,8 +595,18 @@ def p_term(p):
 ## CHANGING GRAMMAR : NOT VERY CONFIDENT : +-~ doesn't seem to be useful to me.
 def p_factor(p):
 	"""factor 	: power
+				| PLUS factor
+				| MINUS factor
 	"""
-	p[0] = p[1]
+	if len(p) == 2:
+		p[0] = p[1]
+	else:
+		if p[2]['type'] != 'NUMBER':
+			typeError(p)
+		p[0] = dict()
+		p[0]['place'] = getNewTempVar()
+		p[0]['type'] = 'NUMBER'
+		emit(getCurrentScope(), p[0]['place'], 0, p[2]['place'], '-')
 # power: atom trailer* ['**' factor]
 # def p_power(p):
 # 	"""power 	: atom trailerlist
