@@ -1,5 +1,2 @@
-lak = 4
-if lak > 5:
-	lak  = lak +1
-else:
-	lak = lak * 5
+a = 3 + 2 - 4*4 + 6/3 - 9 
+

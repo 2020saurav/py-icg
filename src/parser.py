@@ -535,8 +535,8 @@ def p_shift_expr(p):
 ## CHANGING GRAMMAR : simplify grammar to support simple binary operations
 def p_arith_expr(p):
 	"""arith_expr 	:	term
-					|	term PLUS term
-					|	term MINUS term
+					|	term PLUS arith_expr
+					|	term MINUS arith_expr
 	"""
 	if len(p)==2:
 		p[0] = p[1]
@@ -566,9 +566,9 @@ def p_arith_expr(p):
 # CHANGING GRAMMAR : simplifying binary ops
 def p_term(p):
 	"""term :	factor
-			|	factor STAR factor
-			|	factor SLASH factor
-			|	factor PERCENT factor
+			|	factor STAR term
+			|	factor SLASH term
+			|	factor PERCENT term
 	"""
 	if len(p)==2:
 		p[0] = p[1]
