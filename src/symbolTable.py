@@ -90,3 +90,5 @@ def removeCurrentScope():
 	currentScope["width"] = offsetStack.pop()
 
 # print scopeStack
+def printST():
+	print scopeStack

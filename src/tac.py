@@ -43,7 +43,7 @@ def printCode():
 def merge(list1, list2):
 	return list1+list2
 
-def backPatch(functionName, locationList, location):
+def backpatch(functionName, locationList, location):
 	global code
 	for position in locationList:
 		code[functionName][position][2] = location

@@ -132,19 +132,20 @@ def p_expr_stmt(p):
 	"""
 	p[0] = dict()
 	place = ''
-	if exists(p[1]):
-		addAttribute(p[1], 'type', p[3]['type'])
-		if existsInCurrentScope(p[1]):
-			place = getAttribute(p[1], getCurrentScope())
+	if exists(p[1]['name']):
+		addAttribute(p[1]['name'], 'type', p[3]['type'])
+		if existsInCurrentScope(p[1]['name']):
+			place = getAttribute(p[1]['name'], getCurrentScope())
 		else:
 			place = getNewTempVar()
-			addAttribute(p[1], getCurrentScope(), place)
+			addAttribute(p[1]['name'], getCurrentScope(), place)
 	else:
-		addIdentifier(p[1], p[3]['type'])
+		addIdentifier(p[1]['name'], p[3]['type'])
 		place = getNewTempVar()
-		addAttribute(p[1], getCurrentScope(), place)
-
+		addAttribute(p[1]['name'], getCurrentScope(), place)
+	p[0]['nextlist'] = []
 	emit(getCurrentScope(),place, p[3]['place'], '', '=')
+	# printST()
 
 
 	# TODO add semantic action here.
@@ -261,15 +262,15 @@ def p_if_stmt(p):
 # 	"""
 ## CHANGING GRAMMAR : Removing ELSE from WHILE statement
 def p_while_stmt(p):
-	"""while_stmt 	:	WHILE Marker test COLON Marker suite 
+	"""while_stmt 	:	WHILE Marker test COLON MarkerWhile suite 
 	"""
 	if p[3]['type'] != 'BOOLEAN':
 		typeError(p)
 	
 	p[0] = dict()
 	p[0]['type'] = 'VOID'
-	backpatch(p[6]['nextlist'], p[2]['quad'])
-	backpatch(p[3]['truelist'], p[5]['quad'])
+	backpatch(getCurrentScope(),p[6]['nextlist'], p[2]['quad'])
+	backpatch(getCurrentScope(),p[3]['truelist'], p[5]['quad'])
 	p[0]['nextlist'] = p[3]['falselist']
 	emit(getCurrentScope(),'', '', p[2]['quad'], 'GOTO')
  
@@ -277,8 +278,15 @@ def p_Marker(p):
 	"""Marker 		:	
 	"""
 	p[0] = dict()
-	currentScope = getCurrentScope()
-	p[0]['quad'] = getNextQuad(currentScope)
+	p[0]['quad'] = getNextQuad(getCurrentScope())
+
+def p_MarkerWhile(p):
+	"""MarkerWhile 	:
+	"""
+	p[0] = dict()
+	p[0]['quad'] = getNextQuad(getCurrentScope())
+	p[0]['falselist'] = getNextQuad(getCurrentScope())
+	emit(getCurrentScope(), p[-2]['place'],'',-1,'COND_GOTO') 
 # for_stmt: 'for' exprlist 'in' testlist ':' suite ['else' ':' suite]
 # def p_for_stmt(p): 
 # 	"""for_stmt 	:	FOR exprlist IN testlist COLON suite
@@ -293,6 +301,10 @@ def p_for_stmt(p):
 def p_suite(p):
 	"""suite 	: simple_stmt
 				| NEWLINE INDENT stmts DEDENT"""
+	if len(p) == 2:
+		p[0] = p[1]
+	else:
+		p[0] = p[3]
 
 # test: or_test ['if' or_test 'else' test]
 # def p_test(p):
@@ -364,8 +376,8 @@ def p_comparision(p):
 		p[0] = p[1]
 	elif len(p)==4:
 		# TODO support FNUMBER too
-		print p[1]
-		sys.exit()
+		# print p[1]
+		# sys.exit()
 		if p[1]['type'] == p[3]['type']=='NUMBER':
 			pass
 			# okay : Nothing to do here
@@ -374,6 +386,8 @@ def p_comparision(p):
 		p[0] = dict()
 		p[0]['type'] = 'BOOLEAN'
 		p[0]['place'] = getNewTempVar()
+		p[0]['truelist'] = []
+		p[0]['falselist'] = []
 		emit(getCurrentScope(),p[0]['place'], p[1]['place'], p[3]['place'], p[2])
 
 
@@ -599,7 +613,16 @@ def p_atom(p):
 def p_atom1(p):
 	'''atom :	NAME
 	'''
-	p[0] = p[1]
+	p[0] = dict()
+	# p[0]['place'] = p[1]
+	if exists(p[1]):
+		p[0]['name'] = p[1]
+		p[0]['type'] = getAttribute(p[1], 'type')
+		p[0]['place'] = getAttribute(p[1], getCurrentScope())
+		# TODO may need to add more keys like offset and scopename
+	else:
+		p[0]['name'] = p[1]
+		p[0]['type'] = 'REFERENCE_ERROR'
 
 
 	# need to do symbol table thing, type attribution
@@ -722,8 +745,16 @@ def p_testlist1(p):
 	"""
 
 def p_stmts(p):
-	"""stmts 	: stmts stmt
+	"""stmts 	: stmts Marker stmt
 				| stmt"""
+	if len(p) == 2:
+		p[0] = p[1]
+	else:
+		p[0] = dict()
+		p[0] = p[1] + [p[3]]
+		backpatch(getCurrentScope(),p[1]['nextlist'], p[2]['quad'])
+		p[0]['nextlist'] = p[3]['nextlist']
+
 
 def p_error(p):
     print "Syntax Error near '"+str(p.value)+ "' in line "+str(p.lineno)
@@ -731,6 +762,10 @@ def p_error(p):
 
 def typeError(p):
 	print "Type Error near '"+str(p.value)+"' in line "+str(p.lineno)
+	sys.exit()
+
+def referenceError(p):
+	print "Reference Error"
 	sys.exit()
 
 class G1Parser(object):
