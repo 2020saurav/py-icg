@@ -81,6 +81,9 @@ def exists(identifier):
 		return True
 	return False
 
+def existsInCurrentScope(identifier):
+	return scopeStack[len(scopeStack)-1].get(identifier, False) != False
+
 def removeCurrentScope():
 	global scopeStack
 	currentScope = scopeStack.pop()

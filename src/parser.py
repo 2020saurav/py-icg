@@ -11,7 +11,7 @@ def p_file_input(p):
 	"""file_input :	single_stmt ENDMARKER
 	"""
 	p[0] = p[1]
-	# TAC.printCode()
+	printCode()
 
 # Our temporary symbol
 def p_single_stmt(p):
@@ -130,10 +130,26 @@ def p_small_stmt(p):
 def p_expr_stmt(p):
 	"""expr_stmt 	: test EQUAL test
 	"""
-	# TODO MARKER NEEDED HERE?
+	p[0] = dict()
+	place = ''
+	if exists(p[1]):
+		addAttribute(p[1], 'type', p[3]['type'])
+		if existsInCurrentScope(p[1]):
+			place = getAttribute(p[1], getCurrentScope())
+		else:
+			place = getNewTempVar()
+			addAttribute(p[1], getCurrentScope(), place)
+	else:
+		addIdentifier(p[1], p[3]['type'])
+		place = getNewTempVar()
+		addAttribute(p[1], getCurrentScope(), place)
+
+	emit(getCurrentScope(),place, p[3]['place'], '', '=')
+
+
 	# TODO add semantic action here.
 	# TODO Add functions for identifier declaration and assignment
-
+	# How about expr_stmt -> NAME EQUAL test ?
 # our new symbol
 ## CHANGING GRAMMAR : No longer required
 # def p_eqtestlist(p):
@@ -247,15 +263,15 @@ def p_if_stmt(p):
 def p_while_stmt(p):
 	"""while_stmt 	:	WHILE Marker test COLON Marker suite 
 	"""
-	# if p[3]['type'] != 'BOOLEAN':
-	# 	typeError(p)
+	if p[3]['type'] != 'BOOLEAN':
+		typeError(p)
 	
-	# p[0] = dict()
-	# p[0]['type'] = 'VOID'
-	# backpatch(p[6]['nextlist'], p[2]['quad'])
-	# backpatch(p[3]['truelist'], p[5]['quad'])
-	# p[0]['nextlist'] = p[3]['falselist']
-	# emit('', '', p[2]['quad'], 'GOTO')
+	p[0] = dict()
+	p[0]['type'] = 'VOID'
+	backpatch(p[6]['nextlist'], p[2]['quad'])
+	backpatch(p[3]['truelist'], p[5]['quad'])
+	p[0]['nextlist'] = p[3]['falselist']
+	emit(getCurrentScope(),'', '', p[2]['quad'], 'GOTO')
  
 def p_Marker(p):
 	"""Marker 		:	
@@ -303,6 +319,7 @@ def p_ortestlist(p):
 	"""ortestlist 	:
 					| OR and_test ortestlist
 	"""
+	p[0] = dict()
 	# TODO Correct this
 	# no semantic action for now
 
@@ -319,6 +336,7 @@ def p_andtestlist(p):
 	"""andtestlist 	:
 					| AND not_test andtestlist
 	"""
+	p[0] = dict()
 	# TODO Correct this
 	# no semantic action for now
 
@@ -346,6 +364,8 @@ def p_comparision(p):
 		p[0] = p[1]
 	elif len(p)==4:
 		# TODO support FNUMBER too
+		print p[1]
+		sys.exit()
 		if p[1]['type'] == p[3]['type']=='NUMBER':
 			pass
 			# okay : Nothing to do here
@@ -354,7 +374,7 @@ def p_comparision(p):
 		p[0] = dict()
 		p[0]['type'] = 'BOOLEAN'
 		p[0]['place'] = getNewTempVar()
-		emit(p[0]['place'], p[1]['place'], p[3]['place'], p[2])
+		emit(getCurrentScope(),p[0]['place'], p[1]['place'], p[3]['place'], p[2])
 
 
 ## CHANGING GRAMMAR : No longer needed
@@ -471,7 +491,7 @@ def p_arith_expr(p):
 			p[0] = dict()
 			p[0]['place'] = getNewTempVar()
 			p[0]['type'] = 'NUMBER'
-			emit(p[0]['place'], p[1]['place'], p[3]['place'], p[2])
+			emit(getCurrentScope(),p[0]['place'], p[1]['place'], p[3]['place'], p[2])
 		else:
 			typeError(p)
 
@@ -495,6 +515,17 @@ def p_term(p):
 			|	factor SLASH factor
 			|	factor PERCENT factor
 	"""
+	if len(p)==2:
+		p[0] = p[1]
+	else:
+		# TODO support FNUMBER
+		if p[1]['type'] == p[3]['type'] == 'NUMBER':
+			p[0] = dict()
+			p[0]['place'] = getNewTempVar()
+			p[0]['type'] = 'NUMBER'
+			emit(getCurrentScope(),p[0]['place'], p[1]['place'], p[3]['place'], p[2])
+		else:
+			typeError(p)
 # CHANGING GRAMMAR 	: not needed because of above simplification
 # our new symbol
 # def p_factorlist(p):
@@ -516,26 +547,44 @@ def p_term(p):
 def p_factor(p):
 	"""factor 	: power
 	"""
+	p[0] = p[1]
 # power: atom trailer* ['**' factor]
 # def p_power(p):
 # 	"""power 	: atom trailerlist
 # 				| atom trailerlist STARSTAR factor
 # 	"""
 # CHANGING GRAMMAR : removing power operation
+# CHANGING GRAMMAR : removing trailerlist : DANGEROUS. May need to revert
 def p_power(p):
-	"""power 	: atom trailerlist
+	"""power 	: atom
 	"""
+	p[0] = p[1]
 # our new symbol
-def p_trailerlist(p):
-	"""trailerlist 	: 
-					| trailer trailerlist
-	"""
+# CHANGING GRAMMAR : not needed, unless above is reverted
+# def p_trailerlist(p):
+# 	"""trailerlist 	: 
+# 					| trailer trailerlist
+# 	"""
 
 # atom: ('(' [testlist_comp] ')' |
 #       '[' [listmaker] ']' |
 #       '{' [dictorsetmaker] '}' |
 #       '`' testlist1 '`' |
 #       NAME | NUMBER | STRING+)
+# def p_atom(p):
+# 	"""atom 	: LPAREN RPAREN
+# 				| LPAREN testlist_comp RPAREN
+# 				| LSQB RSQB
+# 				| LSQB listmaker RSQB
+# 				| LBRACE RBRACE
+# 				| LBRACE dictorsetmaker RBRACE
+# 				| BACKQUOTE testlist1 BACKQUOTE
+# 				| NAME
+# 				| NUMBER
+# 				| FNUMBER
+# 				| stringlist
+# 	"""
+## CHANGING GRAMMAR: separating out to give types
 def p_atom(p):
 	"""atom 	: LPAREN RPAREN
 				| LPAREN testlist_comp RPAREN
@@ -544,12 +593,23 @@ def p_atom(p):
 				| LBRACE RBRACE
 				| LBRACE dictorsetmaker RBRACE
 				| BACKQUOTE testlist1 BACKQUOTE
-				| NAME
-				| NUMBER
 				| FNUMBER
 				| stringlist
 	"""
+def p_atom1(p):
+	'''atom :	NAME
+	'''
+	p[0] = p[1]
 
+
+	# need to do symbol table thing, type attribution
+def p_atom2(p):
+	'''atom :	NUMBER
+	'''
+	p[0] = dict()
+	p[0]['type'] = 'NUMBER'
+	p[0]['place'] = p[1]
+	# need to do symbol table thing, type attribution
 # our new symbol
 def p_stringlist(p):
 	"""stringlist 	: STRING 
@@ -567,41 +627,44 @@ def p_listmaker(p):
 def p_testlist_comp(p):
 	"""testlist_comp 	: testlist
 	"""
-
+# CHANGING GRAMMAR : May be dangerous. Need to revert above trailerlist too
 # trailer: '(' [arglist] ')' | '[' subscriptlist ']' | '.' NAME
-def p_trailer(p):
-	"""trailer 	: LPAREN RPAREN
-				| LPAREN arglist RPAREN
-				| LSQB subscriptlist RSQB
-				| DOT NAME
-	"""
+# def p_trailer(p):
+# 	"""trailer 	: LPAREN RPAREN
+# 				| LPAREN arglist RPAREN
+# 				| LSQB subscriptlist RSQB
+# 				| DOT NAME
+# 	"""
 
+# CHANGING GRAMMAR : May be dangerous. Need to revert above trailerlist too
 # subscriptlist: subscript (',' subscript)* [',']
-def p_subscriptlist(p):
-	"""subscriptlist 	: subscript
-						| subscript COMMA
-						| subscript COMMA subscriptlist
-	"""
+# def p_subscriptlist(p):
+# 	"""subscriptlist 	: subscript
+# 						| subscript COMMA
+# 						| subscript COMMA subscriptlist
+# 	"""
 
 # subscript: '.' '.' '.' | test | [test] ':' [test] [sliceop]
-def p_subscript(p):
-	"""subscript 	: DOT DOT DOT
-					| test
-					| test COLON test sliceop
-					| COLON test sliceop
-					| test COLON sliceop
-					| test COLON test
-					| test COLON
-					| COLON test
-					| COLON sliceop
-					| COLON
-	"""
+# CHANGING GRAMMAR : May be dangerous. Need to revert above trailerlist too
+# def p_subscript(p):
+# 	"""subscript 	: DOT DOT DOT
+# 					| test
+# 					| test COLON test sliceop
+# 					| COLON test sliceop
+# 					| test COLON sliceop
+# 					| test COLON test
+# 					| test COLON
+# 					| COLON test
+# 					| COLON sliceop
+# 					| COLON
+# 	"""
 
 # sliceop: ':' [test]
-def p_sliceop(p):
-	"""sliceop 	: COLON
-				| COLON test
-	"""
+# CHANGING GRAMMAR : May be dangerous. Need to revert above trailerlist too
+# def p_sliceop(p):
+# 	"""sliceop 	: COLON
+# 				| COLON test
+# 	"""
 
 # exprlist: expr (',' expr)* [',']
 ## CHANGING GRAMMAR : MAY MAY MAY not be needed.
@@ -639,17 +702,19 @@ def p_classdef(p):
 					| CLASS NAME LPAREN testlist RPAREN COLON suite
 	"""
 
+# CHANGING GRAMMAR : Definitely dangerous. Need to revert. Probably need by fn call
 # arglist: (argument ',')* argument [',']
-def p_arglist(p):
-	"""arglist 	: argument
-				| argument COMMA
-				| argument COMMA arglist
-	"""
+# def p_arglist(p):
+# 	"""arglist 	: argument
+# 				| argument COMMA
+# 				| argument COMMA arglist
+# 	"""
 # argument: test | test '=' test
-def p_argument(p):
-	"""argument 	: test
-					| test EQUAL test
-	"""
+# CHANGING GRAMMAR : Definitely dangerous. Need to revert. Probably need by fn call
+# def p_argument(p):
+# 	"""argument 	: test
+# 					| test EQUAL test
+# 	"""
 # testlist1: test (',' test)*
 def p_testlist1(p):
 	"""testlist1 	: test
@@ -688,8 +753,8 @@ if __name__=="__main__":
 	sys.stderr = open('dump','w')
 	root =  z.parse(data)
 	sys.stderr.close()
-	call(["python","converter.py", filename])
-	s = filename
-	fname = "../"+s[s.find("/")+1:s.find(".py")]
-	call(["dot","-Tpng",fname+".dot","-o",fname+".png"])
-	call(["gnome-open",fname+".png"])
+	# call(["python","converter.py", filename])
+	# s = filename
+	# fname = "../"+s[s.find("/")+1:s.find(".py")]
+	# call(["dot","-Tpng",fname+".dot","-o",fname+".png"])
+	# call(["gnome-open",fname+".png"])
