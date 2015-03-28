@@ -239,7 +239,7 @@ def p_compound_stmt(p):
 	"""
 	p[0] = p[1]
 	nextlist = p[1].get('nextlist',[])
-	backpatch(getCurrentScope(),nextlist, p[2]['quad'])
+	backpatch(getCurrentScope(), nextlist, p[2]['quad'])
 
 
 # if_stmt: 'if' test ':' suite ('elif' test ':' suite)* ['else' ':' suite]
@@ -249,10 +249,22 @@ def p_compound_stmt(p):
 # 	"""
 ## CHANGING GRAMMAR : Removing ELIF from grammar. User need to nest in blocks
 def p_if_stmt(p):
-	"""if_stmt 	:	IF test COLON suite
-				|	IF test COLON suite ELSE COLON suite
+	"""if_stmt 	:	IF test COLON MarkerIf suite
+				|	IF test COLON MarkerIf suite ELSE COLON MarkerElse suite
 	"""
-
+	p[0] = dict()
+	if p[2]['type'] != 'BOOLEAN':
+		typeError(p)
+		
+	if len(p) == 6:
+		p[0]['nextlist'] = merge(p[4].get('falselist', []), p[5].get('nextlist', []))
+		p[0]['beginlist'] = p[5].get('beginlist', [])
+		p[0]['endlist'] = p[5].get('endlist', [])
+	else:
+		backpatch(getCurrentScope(), p[4]['falselist'], p[8]['quad'])
+		p[0]['nextlist'] = p[8]['nextlist']
+		p[0]['beginlist'] = merge(p[9].get('beginlist', []), p[5].get('beginlist', []))
+		p[0]['endlist'] = merge(p[9].get('endlist', []), p[5].get('endlist', []))
 # our new symbol
 ## CHANGING GRAMMAR : No longer needed
 # def p_elif_list(p):
@@ -298,7 +310,23 @@ def p_MarkerWhile(p):
 	# p[0]['quad'] = getNextQuad(getCurrentScope())
 	p[0]['falselist'] = [getNextQuad(getCurrentScope())]
 	emit(getCurrentScope(), p[-2]['place'],'0',-1,'COND_GOTO') 
-	# TODO is it 0 or 1?
+
+def p_MarkerIf(p):
+	"""MarkerIf 	:
+	"""
+	p[0] = dict()
+	p[0]['falselist'] = [getNextQuad(getCurrentScope())]
+	emit(getCurrentScope(), p[-2]['place'], '0', -1, 'COND_GOTO')
+
+def p_MarkerElse(p):
+	"""MarkerElse 	:
+	"""
+	p[0] = dict()
+	p[0]['nextlist'] = [getNextQuad(getCurrentScope())]
+	p[0]['quad'] = getNextQuad(getCurrentScope())
+	emit(getCurrentScope(), '', '', -1, 'GOTO')
+
+
 # for_stmt: 'for' exprlist 'in' testlist ':' suite ['else' ':' suite]
 # def p_for_stmt(p): 
 # 	"""for_stmt 	:	FOR exprlist IN testlist COLON suite
@@ -354,6 +382,7 @@ def p_and_test(p):
 	p[0] = p[1]
 	# TODO Correct this
 	# Ignoring ortestlist for now	
+
 
 #our new symbol
 def p_andtestlist(p):

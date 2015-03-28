@@ -1,4 +1,5 @@
-i = 10
-while i < 101000:
-	i = i * 1 + 3 *  7
-	a = 1
+lak = 4
+if lak > 5:
+	lak  = lak +1
+else:
+	lak = lak * 5
