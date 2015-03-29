@@ -44,11 +44,11 @@ def p_MarkerScope(p):
 	"""MarkerScope 	:
 	"""
 	p[0] = dict()
-	p[0]['name'] = p[-1]['name']
+	p[0]['name'] = p[-1]
 	if existsInCurrentScope(p[0]['name']):
 		redefinitionError(p[0]['name'])
 	else:
-		place = getNewTempVar(getCurrentScope())
+		place = getNewTempVar()
 		addAttribute(p[0]['name'], getCurrentScope(), place)
 		addAttribute(p[0]['name'], 'name', p[0]['name'])
 		emit(getCurrentScope(), place, p[0]['name'], '', 'REF')
@@ -63,7 +63,7 @@ def p_MarkerArg(p):
 			redefinitionError(arg['name'])
 		else:
 			addIdentifier(arg['name'], arg['type'])
-			place = getNewTempVar(getCurrentScope())
+			place = getNewTempVar()
 			addAttribute(arg['name'], getCurrentScope(), place)
 	addAttributeToCurrentScope('numParam', len(p[-1]))
 
@@ -71,28 +71,50 @@ def p_MarkerArg(p):
 def p_parameters(p):
 	"""parameters 	: LPAREN RPAREN 
 					| LPAREN varargslist RPAREN"""
+	if len(p) == 3:
+		p[0] = []
+	else:
+		p[0] = p[2]
 
 #varargslist: fpdef ['=' test] (',' fpdef ['=' test])* 
 def p_varargslist(p):
 	"""varargslist 	: fpdef
 					| fpdef EQUAL test
 	"""
+	if len(p) == 2:
+		p[0] = [p[1]]
+	else:
+		pass
 
 def p_varargslistext(p):
 	"""varargslist 	: fpdef COMMA varargslist
 					| fpdef EQUAL test COMMA varargslist
 	"""
+	if len(p) == 4:
+		p[0] = [p[1]] + p[3]
+	else:
+		pass
+
 # fpdef: NAME | '(' fplist ')'
 def p_fpdef(p):
 	"""fpdef 	: NAME 
 				| LPAREN fplist RPAREN
 	"""
+	if len(p) == 2:
+		p[0] = p[1]
+	else:
+		pass
 
 # fplist: fpdef (',' fpdef)* [',']
 def p_fplist(p):
 	"""fplist 	: fpdef
 				| fpdef COMMA fplist	
 	"""
+	if len(p) == 2:
+		p[0] = [p[1]]
+	else:
+		pass
+
 
 # stmt: simple_stmt | compound_stmt
 def p_stmt(p):

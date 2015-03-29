@@ -58,6 +58,12 @@ def addIdentifier(identifier, identifierType):
 		width = 256
 	elif identifierType == 'UNDEFINED':
 		width = 0
+	elif identifierType == 'FUNCTION':
+		width = 4
+	elif identifierType == 'BOOLEAN':
+		width = 1
+	else:
+		width = 0
 	# TODO Add other types
 
 	if not identifier in currentScope:
@@ -80,10 +86,12 @@ def getAttribute(identifier, key):
 		return None
 
 def getAttributeFromCurrentScope(key):
+	global scopeStack
 	currentScope = scopeStack[len(scopeStack) - 1]
 	return currentScope[key]
 
 def addAttributeToCurrentScope(key, value):
+	global scopeStack
 	currentScope = scopeStack[len(scopeStack) - 1]
 	currentScope[key] = value
 
@@ -93,6 +101,7 @@ def exists(identifier):
 	return False
 
 def existsInCurrentScope(identifier):
+	global scopeStack
 	return scopeStack[len(scopeStack)-1].get(identifier, False) != False
 
 def removeCurrentScope():
