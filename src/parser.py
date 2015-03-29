@@ -647,8 +647,6 @@ def p_power(p):
 def p_atom(p):
 	"""atom 	: LPAREN RPAREN
 				| LPAREN testlist_comp RPAREN
-				| LSQB RSQB
-				| LSQB listmaker RSQB
 				| LBRACE RBRACE
 				| LBRACE dictorsetmaker RBRACE
 				| BACKQUOTE testlist1 BACKQUOTE
@@ -699,11 +697,39 @@ def p_atom4(p):
 	p[0]['type'] = 'NUMBER'
 	p[0]['place'] = p[1]
 
+def p_atom5(p):
+	'''atom :	LSQB RSQB
+			| 	LSQB listmaker RSQB
+	'''
+	p[0] = dict()
+	if len(p)==3:
+		p[0]['place'] = []
+		p[0]['type'] = 'UNDEFINED'
+	else:
+		p[0] = p[2]
+
 
 # listmaker: test (',' test)* [','] 
 def p_listmaker(p):
-	"""listmaker 	: testlist
+	"""listmaker 	: test
+					| test COMMA listmaker
 	"""
+	p[0] = dict()
+	if len(p) == 2:
+		try:
+			p[0]['place'] = [p[1]['place']]
+			p[0]['type'] = p[1]['type']
+		except:
+			referenceError(p)
+	else:
+		if p[3]['type'] != p[1]['type']:
+			typeError(p)
+		else:
+			try:
+				p[0]['place'] = [p[1]['place']] + p[3]['place']
+				p[0]['type'] = p[1]['type']
+			except:
+				referenceError(p)
 
 # testlist_comp: test (',' test)* [','] 
 def p_testlist_comp(p):

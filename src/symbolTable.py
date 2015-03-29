@@ -56,6 +56,8 @@ def addIdentifier(identifier, identifierType):
 		width = 4
 	elif identifierType == 'STRING':
 		width = 256
+	elif identifierType == 'UNDEFINED':
+		width = 10
 	# TODO Add other types
 
 	if not identifier in currentScope:
