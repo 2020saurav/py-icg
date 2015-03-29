@@ -30,7 +30,42 @@ def p_single_stmt1(p):
 
 # funcdef: [decorators] 'def' NAME parameters ':' suite
 def p_funcdef(p):
-    "funcdef : DEF NAME parameters COLON suite"
+    """funcdef : DEF NAME MarkerScope parameters MarkerArg COLON suite
+    """
+    noop(p[7]['beginlist'])
+    noop(p[7]['endlist'])
+    emit('', '', '', 'JUMP_RETURN')
+    removeCurrentScope()
+    p[0] = dict()
+    p[0]['type'] = 'FUNCTION'
+    p[0]['name'] = p[2]['name']
+
+def MarkerScope(p):
+	"""MarkerScope :	
+	"""
+	p[0] = dict()
+	p[0]['name'] = p[-1]['name']
+	if existsInCurrentScope(p[0]['name']):
+		redefinitionError(p[0]['name'])
+	else:
+		place = getNewTempVar(getCurrentScope())
+		addAttribute(p[0]['name'], getCurrentScope(), place)
+		addAttribute(p[0]['name'], 'name', p[0]['name'])
+		emit(getCurrentScope(), place, p[0]['name'], '', 'REF')
+		addScope(p[0]['name'])
+		createNewFunctionCode(p[0]['name'])
+
+def MarkerArg(p):
+	"""MarkerArg :	
+	"""
+	for arg in p[-1]:
+		if existsInCurrentScope(arg['name']):
+			redefinitionError(arg['name'])
+		else:
+			addIdentifier(arg['name'], arg['type'])
+			place = getNewTempVar(getCurrentScope())
+			addAttribute(arg['name'], getCurrentScope(), place)
+	addAttributeToCurrentScope('numParam', len(p[-1]))
 
 # parameters: '(' [varargslist] ')'
 def p_parameters(p):
@@ -215,13 +250,13 @@ def p_return_stmt(p):
 	"""
 	p[0] = dict()
 	if len(p) == 2:
-		addAttributeToCurrentScope('returnType', 'CALLBACK')
+		addAttributeToCurrentScope('returnType', 'UNDEFINED')
 		emit(getCurrentScope(), '', '', '', 'RETURN')				
 	else:
 		returnType = getAttributeFromCurrentScope('returnType')
 		if returnType == 'UNDEFINED':
 			if p[2]['type'] == 'FUNCTION':
-				addAttributeToCurrentScope('returnType', 'CALLBACK')
+				addAttributeToCurrentScope('returnType', 'UNDEFINED')
 			else:
 				addAttributeToCurrentScope('returnType', p[2]['type'])
 		elif p[2]['type'] != returnType:
