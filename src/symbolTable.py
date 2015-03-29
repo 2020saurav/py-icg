@@ -57,7 +57,7 @@ def addIdentifier(identifier, identifierType):
 	elif identifierType == 'STRING':
 		width = 256
 	elif identifierType == 'UNDEFINED':
-		width = 10
+		width = 0
 	# TODO Add other types
 
 	if not identifier in currentScope:
@@ -78,6 +78,14 @@ def getAttribute(identifier, key):
 		return entry[key]
 	else:
 		return None
+
+def getAttributeFromCurrentScope(key):
+	currentScope = scopeStack[len(scopeStack) - 1]
+	return currentScope[key]
+
+def addAttributeToCurrentScope(key, value):
+	currentScope = scopeStack[len(scopeStack) - 1]
+	currentScope[key] = value
 
 def exists(identifier):
 	if lookup(identifier) != None:

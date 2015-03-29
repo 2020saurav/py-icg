@@ -76,23 +76,13 @@ def p_stmt(p):
 	"""
 	p[0] = p[1]
 
-# simple_stmt: small_stmt (';' small_stmt)* [';'] NEWLINE
-# def p_simple_stmt(p):
-# 	"""simple_stmt 	: small_stmts NEWLINE
-# 					| small_stmts SEMI NEWLINE
-# 	"""
-## CHANGING GRAMMAR : SEMI COLON NOT ALLOWED NOW
+# simple_stmt: small_stmt  NEWLINE
+
 def p_simple_stmt(p):
 	"""simple_stmt 	: small_stmts NEWLINE
 	"""
 	p[0] = p[1]
 
-# our temp symbol
-# def p_small_stmts(p):
-# 	"""small_stmts 	: small_stmts SEMI small_stmt
-# 					| small_stmt
-# 	"""
-## CHANGING GRAMMAR : SEMI COLON NOT ALLOWED NOW
 def p_small_stmts(p):
 	"""small_stmts 	: small_stmt
 	"""
@@ -148,7 +138,7 @@ def p_expr_stmt(p):
 	try:
 		emit(getCurrentScope(),place, p[3]['place'], '', '=')
 	except:		
-		referenceError(p[3])
+		referenceError(p)
 	# printST()
 
 
@@ -169,8 +159,6 @@ def p_expr_stmt(p):
 # 					| STAREQUAL 
 # 					| SLASHEQUAL 
 # 					| PERCENTEQUAL 
-# 					| STARSTAREQUAL 
-# 					| SLASHSLASHEQUAL 
 # 	"""
 
 # print_stmt: 'print' [ test (',' test)* [','] ]
@@ -192,45 +180,66 @@ def p_print_stmt(p):
 
 
 # pass_stmt: 'pass'
-## CHANGING GRAMMAR : No longer needed
 # def p_pass_stmt(p):
 # 	"pass_stmt : PASS"
 
 # flow_stmt: break_stmt | continue_stmt | return_stmt 
 def p_flow_stmt(p):
-	"""flow_stmt 	: break_stmt
-					| continue_stmt
-					| return_stmt
+	"""flow_stmt 	: break_stmt Marker
+					| continue_stmt Marker
+					| return_stmt Marker
 	"""
+	p[0] = p[1]
+	backpatch(getCurrentScope(), p[1].get('nextlist', []), p[2]['quad'])
 
 # break_stmt: 'break'
 def p_break_stmt(p):
 	"""break_stmt 	: BREAK
 	"""
+	p[0] = dict()
+	p[0]['endlist'] = [getNextQuad(getCurrentScope())]
+	emit(getCurrentScope(), '', '', -1, 'GOTO')
 
 # continue_stmt: 'continue'
 def p_continue_stmt(p):
 	"""continue_stmt 	: CONTINUE
 	"""
+	p[0] = dict()
+	p[0]['beginlist'] = [getNextQuad(getCurrentScope())]
+	emit(getCurrentScope(), '', '', -1, 'GOTO')
 
 # return_stmt: 'return' [testlist]
 def p_return_stmt(p):
 	"""return_stmt 	:	RETURN 
 					|	RETURN testlist
 	"""
-# import_stmt: 'import' NAME ['as' NAME]
-## CHANGING GRAMMAR : No longer needed
+	p[0] = dict()
+	if len(p) == 2:
+		addAttributeToCurrentScope('returnType', 'CALLBACK')
+		emit(getCurrentScope(), '', '', '', 'RETURN')				
+	else:
+		returnType = getAttributeFromCurrentScope('returnType')
+		if returnType == 'UNDEFINED':
+			if p[2]['type'] == 'FUNCTION':
+				addAttributeToCurrentScope('returnType', 'CALLBACK')
+			else:
+				addAttributeToCurrentScope('returnType', p[2]['type'])
+		elif p[2]['type'] != returnType:
+			typeError(p)
+		else:
+			pass
+		emit(getCurrentScope(), p[2]['place'], '', '', 'RETURN')
+
+# TODO:
+# import_stmt: 'import' NAME
 # def p_import_stmt(p): 
 # 	"""import_stmt 	:	IMPORT NAME
-# 					|	IMPORT NAME AS NAME
 # 	"""
 
 # global_stmt: 'global' NAME (',' NAME)*
-## CHANGING GRAMMAR : No longer needed
 # def p_global_stmt(p):
 # 	"""global_stmt 	: GLOBAL NAME namelist
 # 	"""
-# our new symbol
 
 ## CHANGING GRAMMAR : No longer needed
 # def p_namelist(p):
@@ -261,7 +270,6 @@ def p_compound_stmt(p):
 # 	"""if_stmt 	:	IF test COLON suite elif_list
 # 				|	IF test COLON suite elif_list ELSE COLON suite
 # 	"""
-## CHANGING GRAMMAR : Removing ELIF from grammar. User need to nest in blocks
 def p_if_stmt(p):
 	"""if_stmt 	:	IF test COLON MarkerIf suite
 				|	IF test COLON MarkerIf suite ELSE COLON MarkerElse suite
@@ -279,19 +287,9 @@ def p_if_stmt(p):
 		p[0]['nextlist'] = p[8]['nextlist']
 		p[0]['beginlist'] = merge(p[9].get('beginlist', []), p[5].get('beginlist', []))
 		p[0]['endlist'] = merge(p[9].get('endlist', []), p[5].get('endlist', []))
-# our new symbol
-## CHANGING GRAMMAR : No longer needed
-# def p_elif_list(p):
-# 	"""elif_list 	:
-# 					| ELIF test COLON suite elif_list
-# 	"""
 
-# while_stmt: 'while' test ':' suite ['else' ':' suite]
-# def p_while_stmt(p):
-# 	"""while_stmt 	:	WHILE test COLON suite 
-# 					|	WHILE test COLON suite ELSE COLON suite
-# 	"""
-## CHANGING GRAMMAR : Removing ELSE from WHILE statement
+
+# while_stmt: 'while' test ':' suite
 def p_while_stmt(p):
 	"""while_stmt 	:	WHILE Marker test COLON MarkerWhile suite 
 	"""
@@ -305,11 +303,6 @@ def p_while_stmt(p):
 	p[0]['nextlist'] = merge(p[6].get('endlist', []), p[6].get('nextlist', []))
 	p[0]['nextlist'] = merge(p[5].get('falselist', []), p[0].get('nextlist', []))
 	emit(getCurrentScope(),'', '', p[2]['quad'], 'GOTO')
-	
-	# backpatch(getCurrentScope(),p[6]['nextlist'], p[2]['quad'])
-	# backpatch(getCurrentScope(),p[3]['truelist'], p[5]['quad'])
-	# p[0]['nextlist'] = p[6]['nextlist']
-	# p[0]['nextlist'] = merge(p[0]['nextlist'], p[3]['falselist'])
  
 def p_Marker(p):
 	"""Marker 		:	
@@ -360,12 +353,7 @@ def p_suite(p):
 	else:
 		p[0] = p[3]
 
-# test: or_test ['if' or_test 'else' test]
-# def p_test(p):
-# 	"""test 	: or_test
-# 				| or_test IF or_test ELSE test
-# 	"""
-## CHANGING GRAMMAR : Removing inline IF statements
+# test: or_test
 def p_test(p):
 	"""test 	: or_test
 	"""
@@ -374,38 +362,39 @@ def p_test(p):
 
 # or_test: and_test ('or' and_test)*
 def p_or_test(p):
-	"""or_test 	: and_test ortestlist
+	"""or_test 	: and_test
+				| and_test OR or_test
 	"""
-	p[0] = p[1]
-	# TODO Correct this
-	# Ignoring ortestlist for now
-
-# our new symbol
-def p_ortestlist(p):
-	"""ortestlist 	:
-					| OR and_test ortestlist
-	"""
-	p[0] = dict()
-	# TODO Correct this
-	# no semantic action for now
+	if len(p)==2:
+		p[0] = p[1]
+	else:
+		if p[1]['type'] == p[3]['type'] == 'BOOLEAN':
+			p[0] = dict()
+			p[0]['place'] = getNewTempVar()
+			p[0]['type'] = 'BOOLEAN'
+			emit(getCurrentScope(),p[0]['place'], p[1]['place'], p[3]['place'], p[2])
+		else:
+			if(p[1]['type']=='REFERENCE_ERROR' or p[3]['type']=='REFERENCE_ERROR'):
+				referenceError(p)
+			typeError(p)		
 
 # and_test: not_test ('and' not_test)*
 def p_and_test(p):
-	"""and_test 	: not_test andtestlist
+	"""and_test 	: not_test
+					| not_test AND and_test
 	"""
-	p[0] = p[1]
-	# TODO Correct this
-	# Ignoring ortestlist for now	
-
-
-#our new symbol
-def p_andtestlist(p):
-	"""andtestlist 	:
-					| AND not_test andtestlist
-	"""
-	p[0] = dict()
-	# TODO Correct this
-	# no semantic action for now
+	if len(p)==2:
+		p[0] = p[1]
+	else:
+		if p[1]['type'] == p[3]['type'] == 'BOOLEAN':
+			p[0] = dict()
+			p[0]['place'] = getNewTempVar()
+			p[0]['type'] = 'BOOLEAN'
+			emit(getCurrentScope(),p[0]['place'], p[1]['place'], p[3]['place'], p[2])
+		else:
+			if(p[1]['type']=='REFERENCE_ERROR' or p[3]['type']=='REFERENCE_ERROR'):
+				referenceError(p)
+			typeError(p)
 
 # not_test: 'not' not_test | comparison
 def p_not_test(p):
@@ -415,8 +404,15 @@ def p_not_test(p):
 	if len(p)==2:
 		p[0] = p[1]
 	else:
-		pass
-		# TODO Implement this
+		if p[2]['type'] == 'BOOLEAN':
+			p[0] = dict()
+			p[0]['place'] = getNewTempVar()
+			p[0]['type'] = 'BOOLEAN'
+			emit(getCurrentScope(),p[0]['place'], p[2]['place'],'', p[1])
+		else:
+			if(p[2]['type']=='REFERENCE_ERROR'):
+				referenceError(p)
+			typeError(p)
 
 # comparison: expr (comp_op expr)*
 # def p_comparision(p):
@@ -435,13 +431,11 @@ def p_comparision(p):
 			# okay : Nothing to do here
 		else:
 			if(p[1]['type']=='REFERENCE_ERROR' or p[3]['type']=='REFERENCE_ERROR'):
-				referenceError(p[3])
+				referenceError(p)
 			typeError(p)
 		p[0] = dict()
 		p[0]['type'] = 'BOOLEAN'
 		p[0]['place'] = getNewTempVar()
-		p[0]['truelist'] = []
-		p[0]['falselist'] = []
 		emit(getCurrentScope(),p[0]['place'], p[1]['place'], p[3]['place'], p[2])
 
 
@@ -477,75 +471,79 @@ def p_comp_op(p):
 	p[0] = p[1]
 
 # expr: xor_expr ('|' xor_expr)*
-# def p_expr(p):
-# 	"""expr 	: xor_expr xorexprlist
-# 	"""
-## CHANGING GRAMMAR : Not usually : VBAR or xor. MAY BRING BACK LATER
 def p_expr(p):
 	"""expr 	: xor_expr
+				| xor_expr VBAR expr
 	"""
-	p[0] = p[1]
-# CHANGING GRAMMAR : No longer needed, unless above grammar is reverted.
-# our new symbol
-# def p_xorexprlist(p):
-# 	"""xorexprlist 	:
-# 					|	VBAR xor_expr xorexprlist
-# 	"""
+	if len(p)==2:
+		p[0] = p[1]
+	else:
+		if p[1]['type'] == p[3]['type'] == 'NUMBER':
+			p[0] = dict()
+			p[0]['place'] = getNewTempVar()
+			p[0]['type'] = 'NUMBER'
+			emit(getCurrentScope(),p[0]['place'], p[1]['place'], p[3]['place'], p[2])
+		else:
+			if(p[1]['type']=='REFERENCE_ERROR' or p[3]['type']=='REFERENCE_ERROR'):
+				referenceError(p)
+			typeError(p)
 
 # xor_expr: and_expr ('^' and_expr)*
-# def p_xor_expr(p):
-# 	"""xor_expr 	: and_expr andexprlist
-# 	"""
-## CHANGING GRAMMAR : same reason as above. May need to revert for feature addition
 def p_xor_expr(p):
 	"""xor_expr 	: and_expr
+					| and_expr CIRCUMFLEX xor_expr
 	"""
-	p[0] = p[1]
-# our new symbol
-# def p_andexprlist(p):
-# 	"""andexprlist 	:
-# 					| CIRCUMFLEX and_expr andexprlist
-# 	"""
-# CHANGING GRAMMAR : No longer needed, unless above grammar is reverted.
-# and_expr: shift_expr ('&' shift_expr)*
-# def p_and_expr(p):
-# 	"""and_expr 	: shift_expr shiftexprlist
-# 	"""
-## CHANGING GRAMMAR : same reason as above. May need to revert for feature addition
+	if len(p)==2:
+		p[0] = p[1]
+	else:
+		if p[1]['type'] == p[3]['type'] == 'NUMBER':
+			p[0] = dict()
+			p[0]['place'] = getNewTempVar()
+			p[0]['type'] = 'NUMBER'
+			emit(getCurrentScope(),p[0]['place'], p[1]['place'], p[3]['place'], p[2])
+		else:
+			if(p[1]['type']=='REFERENCE_ERROR' or p[3]['type']=='REFERENCE_ERROR'):
+				referenceError(p)
+			typeError(p)
 
+# and_expr: shift_expr ('&' shift_expr)*
 def p_and_expr(p):
 	"""and_expr 	: shift_expr
+					| shift_expr AMPER and_expr
 	"""
-	p[0] = p[1]
-# CHANGING GRAMMAR : No longer needed, unless above grammar is reverted.
-# our new symbol
-# def p_shiftexprlist(p):
-# 	"""shiftexprlist 	:
-# 						| AMPER shift_expr shiftexprlist
-# 	"""
+	if len(p)==2:
+		p[0] = p[1]
+	else:
+		if p[1]['type'] == p[3]['type'] == 'NUMBER':
+			p[0] = dict()
+			p[0]['place'] = getNewTempVar()
+			p[0]['type'] = 'NUMBER'
+			emit(getCurrentScope(),p[0]['place'], p[1]['place'], p[3]['place'], p[2])
+		else:
+			if(p[1]['type']=='REFERENCE_ERROR' or p[3]['type']=='REFERENCE_ERROR'):
+				referenceError(p)
+			typeError(p)
 
 # shift_expr: arith_expr (('<<'|'>>') arith_expr)*
-# def p_shift_expr(p):
-# 	"""shift_expr 	: arith_expr arithexprlist
-# 	"""
-## CHANGING GRAMMAR : same reason as above. May need to revert for feature addition
 def p_shift_expr(p):
 	"""shift_expr 	: arith_expr
+					| arith_expr LEFTSHIFT shift_expr
+					| arith_expr RIGHTSHIFT shift_expr
 	"""
-	p[0] = p[1]
-# CHANGING GRAMMAR : No longer needed, unless above grammar is reverted.
-# our new symbol
-# def p_arithexprlist(p):
-# 	"""arithexprlist 	:
-# 						| LEFTSHIFT arith_expr arithexprlist
-# 						| RIGHTSHIFT arith_expr arithexprlist
-# 	"""
+	if len(p)==2:
+		p[0] = p[1]
+	else:
+		if p[1]['type'] == p[3]['type'] == 'NUMBER':
+			p[0] = dict()
+			p[0]['place'] = getNewTempVar()
+			p[0]['type'] = 'NUMBER'
+			emit(getCurrentScope(),p[0]['place'], p[1]['place'], p[3]['place'], p[2])
+		else:
+			if(p[1]['type']=='REFERENCE_ERROR' or p[3]['type']=='REFERENCE_ERROR'):
+				referenceError(p)
+			typeError(p)
 
 # arith_expr: term (('+'|'-') term)*
-# def p_arith_expr(p):
-# 	"""arith_expr 	:	term termlist
-# 	"""
-## CHANGING GRAMMAR : simplify grammar to support simple binary operations
 def p_arith_expr(p):
 	"""arith_expr 	:	term
 					|	term PLUS arith_expr
@@ -561,23 +559,11 @@ def p_arith_expr(p):
 			emit(getCurrentScope(),p[0]['place'], p[1]['place'], p[3]['place'], p[2])
 		else:
 			if(p[1]['type']=='REFERENCE_ERROR' or p[3]['type']=='REFERENCE_ERROR'):
-				referenceError(p[3])
+				referenceError(p)
 			typeError(p)
 
 
-# CHANGING GRAMMAR : no longer needed if above simplified grammar is used
-# our new symbol
-# def p_termlist(p):
-# 	"""termlist 	:
-# 					| PLUS term termlist
-# 					| MINUS term termlist
-# 	"""
-
 # term: factor (('*'|'/'|'%'|'//') factor)*
-# def p_term(p):
-# 	"""term :	factor factorlist
-# 	"""
-# CHANGING GRAMMAR : simplifying binary ops
 def p_term(p):
 	"""term :	factor
 			|	factor STAR term
@@ -596,24 +582,8 @@ def p_term(p):
 			if(p[1]['type']=='REFERENCE_ERROR' or p[3]['type']=='REFERENCE_ERROR'):
 				referenceError(p)
 			typeError(p)
-# CHANGING GRAMMAR 	: not needed because of above simplification
-# our new symbol
-# def p_factorlist(p):
-# 	"""factorlist 	:
-# 					| STAR factor factorlist
-# 					| SLASH factor factorlist
-# 					| PERCENT factor factorlist
-# 					| SLASHSLASH factor factorlist
-# 	"""
 
-# factor: ('+'|'-'|'~') factor | power
-# def p_factor(p):
-# 	"""factor 	: power
-# 				| PLUS factor
-# 				| MINUS factor
-# 				| TILDE factor
-# 	"""
-## CHANGING GRAMMAR : NOT VERY CONFIDENT : +-~ doesn't seem to be useful to me.
+# factor: ('+'|'-') factor | power
 def p_factor(p):
 	"""factor 	: power
 				| PLUS factor
@@ -628,13 +598,7 @@ def p_factor(p):
 		p[0]['place'] = getNewTempVar()
 		p[0]['type'] = 'NUMBER'
 		emit(getCurrentScope(), p[0]['place'], 0, p[2]['place'], '-')
-# power: atom trailer* ['**' factor]
-# def p_power(p):
-# 	"""power 	: atom trailerlist
-# 				| atom trailerlist STARSTAR factor
-# 	"""
-# CHANGING GRAMMAR : removing power operation
-# CHANGING GRAMMAR : removing trailerlist : DANGEROUS. May need to revert
+# power: atom trailer*
 def p_power(p):
 	"""power 	: atom
 	"""
@@ -666,9 +630,7 @@ def p_power(p):
 # 	"""
 ## CHANGING GRAMMAR: separating out to give types
 def p_atom(p):
-	"""atom 	: LPAREN RPAREN
-				| LPAREN testlist_comp RPAREN
-				| LBRACE RBRACE
+	"""atom 	: LBRACE RBRACE
 				| LBRACE dictorsetmaker RBRACE
 				| BACKQUOTE testlist1 BACKQUOTE
 	"""
@@ -729,7 +691,14 @@ def p_atom5(p):
 	else:
 		p[0] = p[2]
 
-
+def p_atom6(p): 
+	"""atom	:	LPAREN RPAREN
+			| 	LPAREN testlist_comp RPAREN
+	"""
+	if len(p) == 3:
+		p[0] = dict()
+	else:
+		p[0] = p[2]
 # listmaker: test (',' test)* [','] 
 def p_listmaker(p):
 	"""listmaker 	: test
@@ -754,8 +723,15 @@ def p_listmaker(p):
 
 # testlist_comp: test (',' test)* [','] 
 def p_testlist_comp(p):
-	"""testlist_comp 	: testlist
+	"""testlist_comp 	: test
+						| test COMMA testlist_comp
 	"""
+	if len(p)==2:
+		p[0] = p[1]
+	else:
+		p[0] = [p[1]] + p[2]
+		# Not very sure.
+
 # CHANGING GRAMMAR : May be dangerous. Need to revert above trailerlist too
 # trailer: '(' [arglist] ')' | '[' subscriptlist ']' | '.' NAME
 # def p_trailer(p):
