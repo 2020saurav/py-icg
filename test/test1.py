@@ -1,11 +1,10 @@
-a = 100
-if a > 10000:
-	b = 10 * a + 5
-	c = b /5
-else:
-	if a ==100:
-		d = 100+a
-		print d
-	else:
-		print "test"
-print "kkk"
+def f(n):
+	ans = 1
+	n = 5
+	while n !=1:
+		ans = ans * n
+		n = n-1
+	return ans
+
+x = f(50)
+print x

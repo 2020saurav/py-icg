@@ -110,7 +110,7 @@ def p_function_call(p):
 			p[0]['place'] = returnPlace
 		else :
 			referenceError(p[1])
-
+	p[0]['type'] = 'UNDEFINED'
 #varargslist: fpdef ['=' test] (',' fpdef ['=' test])* 
 def p_varargslist(p):
 	"""varargslist 	: fpdef
@@ -967,7 +967,7 @@ def printError(p):
 			print "Print Error in line "+str(p.lineno)
 		except:
 			print "Print Error"
-	sys.exit()
+	# sys.exit()
 
 
 class G1Parser(object):
