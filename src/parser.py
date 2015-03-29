@@ -40,8 +40,8 @@ def p_funcdef(p):
     p[0]['type'] = 'FUNCTION'
     p[0]['name'] = p[2]['name']
 
-def MarkerScope(p):
-	"""MarkerScope :	
+def p_MarkerScope(p):
+	"""MarkerScope 	:
 	"""
 	p[0] = dict()
 	p[0]['name'] = p[-1]['name']
@@ -55,8 +55,8 @@ def MarkerScope(p):
 		addScope(p[0]['name'])
 		createNewFunctionCode(p[0]['name'])
 
-def MarkerArg(p):
-	"""MarkerArg :	
+def p_MarkerArg(p):
+	"""MarkerArg 	:
 	"""
 	for arg in p[-1]:
 		if existsInCurrentScope(arg['name']):
