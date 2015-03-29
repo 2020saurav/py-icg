@@ -84,6 +84,36 @@ def p_parameters(p):
 	else:
 		p[0] = p[2]
 
+def p_function_call(p):
+	"""function_call 	: NAME LPAREN RPAREN 
+						| NAME LPAREN testlist RPAREN 
+	"""
+	p[0] = dict()
+	place = ''
+	if not exists(p[1]):
+		referenceError(p[1])
+	else :
+		identifierType = getAttribute(p[1],'type')
+		if identifierType == 'FUNCTION':
+			if not existsInCurrentScope(p[1]):
+				place = getNewTempVar()
+				addAttribute(p[1],getCurrentScope(),place)
+			else:
+				place = getAttribute(p[1],'place')
+			if len(p)==4:
+				pass
+			else:
+				for param in p[3]:
+					emit(getCurrentScope(),param['place'],'','','PARAM')
+			emit(getCurrentScope(),'','',p[1],'JUMPLABEL')
+			fname = getAttribute(p[1],'name')
+			p[0]['type'] = getAttributeFromFunctionList(fname,'returnType')
+			returnPlace = getNewTempVar()
+			emit(getCurrentScope(),returnPlace,'','','FUNCTION_RETURN')
+			p[0]['place'] = returnPlace
+		else :
+			referenceError(p[1])
+
 #varargslist: fpdef ['=' test] (',' fpdef ['=' test])* 
 def p_varargslist(p):
 	"""varargslist 	: fpdef
@@ -175,6 +205,7 @@ def p_small_stmt(p):
 ## CHANGING GRAMMAR : Removing list assignment multiple
 def p_expr_stmt(p):
 	"""expr_stmt 	: test EQUAL test
+					| test EQUAL function_call
 	"""
 	p[0] = dict()
 	place = ''
@@ -314,6 +345,7 @@ def p_compound_stmt(p):
 						| while_stmt Marker
 						| funcdef Marker
 						| classdef Marker
+						| function_call Marker
 	"""
 	p[0] = p[1]
 	nextlist = p[1].get('nextlist',[])
@@ -930,6 +962,17 @@ def redefinitionError(p):
 		except:
 			print "Redefinition Error"
 	sys.exit()
+
+def printError(p):
+	try:
+		print "Print Error near '"+str(p.value)+"' in line "+str(p.lineno)
+	except:
+		try:
+			print "Print Error in line "+str(p.lineno)
+		except:
+			print "Print Error"
+	sys.exit()
+
 
 class G1Parser(object):
 	def __init__(self, mlexer=None):

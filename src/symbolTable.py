@@ -12,6 +12,7 @@ symbolTable = {
 }
 
 offsetStack	= [0]
+functionlist = {'program':symbolTable['program']}
 scopeStack	= [symbolTable["program"]]
 
 def lookup(identifier):
@@ -48,6 +49,7 @@ def addScope(scopeName):
 
 	# start new relative addressing
 	offsetStack.append(0)
+	functionlist[scopeName] = currentScope[scopeName]
 
 def addIdentifier(identifier, identifierType):
 	global scopeStack
@@ -66,13 +68,14 @@ def addIdentifier(identifier, identifierType):
 		width = 0
 	# TODO Add other types
 
+	currentOffset = offsetStack.pop()
 	if not identifier in currentScope:
 		currentScope[identifier] = dict()
-	currentScope[identifier]["offset"] = width
+	currentScope[identifier]["offset"] = currentOffset
 	currentScope[identifier]["type"] = identifierType
+	currentScope[identifier]["width"] = width	
 
-	currentOffset = offsetStack.pop() + width
-	offsetStack.append(currentOffset)
+	offsetStack.append(currentOffset + width)
 
 def addAttribute(identifier, key, value):
 	entry = lookup(identifier)
@@ -112,3 +115,9 @@ def removeCurrentScope():
 # print scopeStack
 def printST():
 	print scopeStack
+
+def getAttributeFromFunctionList(function, key):
+	if key in functionlist:
+		return functionlist[function][key]
+	else :
+		return None 	
