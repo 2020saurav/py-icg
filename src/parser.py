@@ -41,6 +41,7 @@ def p_funcdef(p):
     noop(getCurrentScope(), p[7]['beginlist'])
     noop(getCurrentScope(), p[7]['endlist'])
     emit(getCurrentScope(), '', '', '', 'JUMP_RETURN')
+    # print getCurrentScope()
     removeCurrentScope()
     p[0] = dict()
     p[0]['type'] = 'FUNCTION'
@@ -59,7 +60,7 @@ def p_MarkerScope(p):
 		place = getNewTempVar()
 		addAttribute(p[0]['name'], getCurrentScope(), place)
 		addAttribute(p[0]['name'], 'name', p[0]['name'])
-		emit(getCurrentScope(), place, p[0]['name'], '', 'REF')
+		# emit(getCurrentScope(), place, p[0]['name'], '', 'REF')
 		addScope(p[0]['name'])
 		createNewFucntionCode(p[0]['name'])
 
@@ -93,23 +94,19 @@ def p_function_call(p):
 	if not exists(p[1]):
 		referenceError(p[1])
 	else :
-		identifierType = getAttribute(p[1],'type')
+		identifierType = getAttribute(p[1], 'type')
 		if identifierType == 'FUNCTION':
-			if not existsInCurrentScope(p[1]):
-				place = getNewTempVar()
-				addAttribute(p[1],getCurrentScope(),place)
-			else:
-				place = getAttribute(p[1],'place')
 			if len(p)==4:
 				pass
 			else:
 				for param in p[3]:
-					emit(getCurrentScope(),param['place'],'','','PARAM')
-			emit(getCurrentScope(),'','',p[1],'JUMPLABEL')
-			fname = getAttribute(p[1],'name')
-			p[0]['type'] = getAttributeFromFunctionList(fname,'returnType')
+					emit(getCurrentScope(), param['place'], '', '', 'PARAM')
+
+			emit(getCurrentScope(), '', '', p[1], 'JUMPLABEL')
+			fname = getAttribute(p[1], 'name')
+			p[0]['type'] = getAttributeFromFunctionList(fname, 'returnType')
 			returnPlace = getNewTempVar()
-			emit(getCurrentScope(),returnPlace,'','','FUNCTION_RETURN')
+			emit(getCurrentScope(), returnPlace, '', '', 'FUNCTION_RETURN')
 			p[0]['place'] = returnPlace
 		else :
 			referenceError(p[1])
@@ -297,7 +294,7 @@ def p_continue_stmt(p):
 # return_stmt: 'return' [testlist]
 def p_return_stmt(p):
 	"""return_stmt 	:	RETURN 
-					|	RETURN testlist
+					|	RETURN test
 	"""
 	p[0] = dict()
 	if len(p) == 2:
@@ -401,7 +398,6 @@ def p_MarkerWhile(p):
 	"""MarkerWhile 	:
 	"""
 	p[0] = dict()
-	# p[0]['quad'] = getNextQuad(getCurrentScope())
 	p[0]['falselist'] = [getNextQuad(getCurrentScope())]
 	emit(getCurrentScope(), p[-2]['place'], 0, -1,'COND_GOTO') 
 
@@ -417,8 +413,8 @@ def p_MarkerElse(p):
 	"""
 	p[0] = dict()
 	p[0]['nextlist'] = [getNextQuad(getCurrentScope())]
-	p[0]['quad'] = getNextQuad(getCurrentScope())
 	emit(getCurrentScope(), '', '', -1, 'GOTO')
+	p[0]['quad'] = getNextQuad(getCurrentScope())
 
 
 # for_stmt: 'for' exprlist 'in' testlist ':' suite ['else' ':' suite]
