@@ -11,6 +11,11 @@ def p_file_input(p):
 	"""file_input :	single_stmt ENDMARKER
 	"""
 	p[0] = p[1]
+	# noop(getCurrentScope(), p[1]['beginlist'])
+	# noop(getCurrentScope(), p[1]['endlist'])
+	emit(getCurrentScope(), '','', -1, 'HALT')
+	addAttributeToCurrentScope('numParam', 0)
+	removeCurrentScope()
 	printCode()
 
 # Our temporary symbol
@@ -28,17 +33,19 @@ def p_single_stmt1(p):
 	"""
 	p[0] = p[1] + [p[2]]
 
+
 # funcdef: [decorators] 'def' NAME parameters ':' suite
 def p_funcdef(p):
     """funcdef : DEF NAME MarkerScope parameters MarkerArg COLON suite
     """
-    noop(p[7]['beginlist'])
-    noop(p[7]['endlist'])
-    emit('', '', '', 'JUMP_RETURN')
+    noop(getCurrentScope(), p[7]['beginlist'])
+    noop(getCurrentScope(), p[7]['endlist'])
+    emit(getCurrentScope(), '', '', '', 'JUMP_RETURN')
     removeCurrentScope()
     p[0] = dict()
     p[0]['type'] = 'FUNCTION'
-    p[0]['name'] = p[2]['name']
+    p[0]['name'] = p[3]['name']
+
 
 def p_MarkerScope(p):
 	"""MarkerScope 	:
@@ -48,23 +55,24 @@ def p_MarkerScope(p):
 	if existsInCurrentScope(p[0]['name']):
 		redefinitionError(p[0]['name'])
 	else:
+		addIdentifier(p[0]['name'], 'FUNCTION')
 		place = getNewTempVar()
 		addAttribute(p[0]['name'], getCurrentScope(), place)
 		addAttribute(p[0]['name'], 'name', p[0]['name'])
 		emit(getCurrentScope(), place, p[0]['name'], '', 'REF')
 		addScope(p[0]['name'])
-		createNewFunctionCode(p[0]['name'])
+		createNewFucntionCode(p[0]['name'])
 
 def p_MarkerArg(p):
 	"""MarkerArg 	:
 	"""
 	for arg in p[-1]:
-		if existsInCurrentScope(arg['name']):
-			redefinitionError(arg['name'])
+		if existsInCurrentScope(arg):
+			redefinitionError(arg)
 		else:
-			addIdentifier(arg['name'], arg['type'])
+			addIdentifier(arg, 'UNDEFINED')
 			place = getNewTempVar()
-			addAttribute(arg['name'], getCurrentScope(), place)
+			addAttribute(arg, getCurrentScope(), place)
 	addAttributeToCurrentScope('numParam', len(p[-1]))
 
 # parameters: '(' [varargslist] ')'
@@ -911,6 +919,16 @@ def referenceError(p):
 			print "Reference Error in line "+str(p.lineno)
 		except:
 			print "Reference Error"
+	sys.exit()
+
+def redefinitionError(p):
+	try:
+		print "Redefinition Error near '"+str(p.value)+"' in line "+str(p.lineno)
+	except:
+		try:
+			print "Redefinition Error in line "+str(p.lineno)
+		except:
+			print "Redefinition Error"
 	sys.exit()
 
 class G1Parser(object):
