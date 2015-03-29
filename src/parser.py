@@ -103,14 +103,16 @@ def p_function_call(p):
 					emit(getCurrentScope(), param['place'], '', '', 'PARAM')
 
 			emit(getCurrentScope(), '', '', p[1], 'JUMPLABEL')
-			fname = getAttribute(p[1], 'name')
+			# fname = getAttribute(p[1], 'name')
+			fname = p[1]
+			# print fname
 			p[0]['type'] = getAttributeFromFunctionList(fname, 'returnType')
 			returnPlace = getNewTempVar()
 			emit(getCurrentScope(), returnPlace, '', '', 'FUNCTION_RETURN')
 			p[0]['place'] = returnPlace
 		else :
 			referenceError(p[1])
-	p[0]['type'] = 'UNDEFINED'
+	# p[0]['type'] = 'UNDEFINED'
 #varargslist: fpdef ['=' test] (',' fpdef ['=' test])* 
 def p_varargslist(p):
 	"""varargslist 	: fpdef

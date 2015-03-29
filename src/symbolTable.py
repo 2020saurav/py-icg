@@ -117,7 +117,7 @@ def printST():
 	print scopeStack
 
 def getAttributeFromFunctionList(function, key):
-	if key in functionlist:
+	if function in functionlist:
 		return functionlist[function][key]
 	else :
 		return None 	
