@@ -419,6 +419,8 @@ def p_comparision(p):
 			pass
 			# okay : Nothing to do here
 		else:
+			if(p[1]['type']=='REFERENCE_ERROR' or p[3]['type']=='REFERENCE_ERROR'):
+				referenceError(p)
 			typeError(p)
 		p[0] = dict()
 		p[0]['type'] = 'BOOLEAN'
@@ -543,6 +545,8 @@ def p_arith_expr(p):
 			p[0]['type'] = 'NUMBER'
 			emit(getCurrentScope(),p[0]['place'], p[1]['place'], p[3]['place'], p[2])
 		else:
+			if(p[1]['type']=='REFERENCE_ERROR' or p[3]['type']=='REFERENCE_ERROR'):
+				referenceError(p)
 			typeError(p)
 
 
@@ -574,6 +578,8 @@ def p_term(p):
 			p[0]['type'] = 'NUMBER'
 			emit(getCurrentScope(), p[0]['place'], p[1]['place'], p[3]['place'], p[2])
 		else:
+			if(p[1]['type']=='REFERENCE_ERROR' or p[3]['type']=='REFERENCE_ERROR'):
+				referenceError(p)
 			typeError(p)
 # CHANGING GRAMMAR 	: not needed because of above simplification
 # our new symbol
@@ -836,31 +842,34 @@ def p_stmts(p):
 	p[0]['beginlist'] = merge(p[1].get('beginlist', []), p[2].get('beginlist', []))
 	p[0]['endlist'] = merge(p[1].get('endlist', []), p[2].get('endlist', []))
 
-	# if len(p) == 2:
-	# 	p[0] = p[1]
-	# else:
-	# 	p[0] = dict()
-	# 	p[0] = p[1] + [p[3]]
-	# 	backpatch(getCurrentScope(),p[1]['nextlist'], p[2]['quad'])
-	# 	p[0]['nextlist'] = p[3]['nextlist']
-
-
 def p_error(p):
 	try:
 		print "Syntax Error near '"+str(p.value)+ "' in line "+str(p.lineno)
 	except:
-		print "Syntax Error"
+		try:
+			print "Syntax Error in line "+str(p.lineno)
+		except:
+			print "Syntax Error"
 	sys.exit()
 
 def typeError(p):
 	try:
 		print "Type Error near '"+str(p.value)+"' in line "+str(p.lineno)
 	except:
-		print "Type Error"
+		try:
+			print "Type Error in line "+str(p.lineno)
+		except:
+			print "Type Error"
 	sys.exit()
 
 def referenceError(p):
-	print "Reference Error"
+	try:
+		print "Reference Error near '"+str(p.value)+"' in line "+str(p.lineno)
+	except:
+		try:
+			print "Reference Error in line "+str(p.lineno)
+		except:
+			print "Reference Error"
 	sys.exit()
 
 class G1Parser(object):
