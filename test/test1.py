@@ -1,1 +1,2 @@
-a = [1,2,34]
+x = "hello"
+print x, 5

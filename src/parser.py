@@ -145,7 +145,10 @@ def p_expr_stmt(p):
 		place = getNewTempVar()
 		addAttribute(p[1]['name'], getCurrentScope(), place)
 	p[0]['nextlist'] = []
-	emit(getCurrentScope(),place, p[3]['place'], '', '=')
+	try:
+		emit(getCurrentScope(),place, p[3]['place'], '', '=')
+	except:		
+		referenceError(p[3])
 	# printST()
 
 
@@ -175,6 +178,18 @@ def p_print_stmt(p):
 	"""print_stmt 	:	PRINT
 					|	PRINT testlist
 	"""
+	p[0] = dict()
+	if len(p)==2:
+		emit(getCurrentScope(), '"\n"', '', 'STRING', 'PRINT')
+	else:
+		for item in p[2]:
+			itemType = item.get('type')
+			if itemType not in ['STRING', 'NUMBER', 'BOOLEAN', 'UNDEFINED']:
+				printError(p)
+			emit(getCurrentScope(), item['place'], '', itemType, 'PRINT')
+		emit(getCurrentScope(), '"\n"', '', 'STRING', 'PRINT')
+
+
 
 # pass_stmt: 'pass'
 ## CHANGING GRAMMAR : No longer needed
@@ -420,7 +435,7 @@ def p_comparision(p):
 			# okay : Nothing to do here
 		else:
 			if(p[1]['type']=='REFERENCE_ERROR' or p[3]['type']=='REFERENCE_ERROR'):
-				referenceError(p)
+				referenceError(p[3])
 			typeError(p)
 		p[0] = dict()
 		p[0]['type'] = 'BOOLEAN'
@@ -546,7 +561,7 @@ def p_arith_expr(p):
 			emit(getCurrentScope(),p[0]['place'], p[1]['place'], p[3]['place'], p[2])
 		else:
 			if(p[1]['type']=='REFERENCE_ERROR' or p[3]['type']=='REFERENCE_ERROR'):
-				referenceError(p)
+				referenceError(p[3])
 			typeError(p)
 
 
@@ -791,9 +806,12 @@ def p_testlist_comp(p):
 # testlist: test (',' test)* [',']
 def p_testlist(p):
 	"""testlist 	: test
-					| test COMMA
 					| test COMMA testlist
 	"""
+	if len(p) == 2:
+		p[0] = [p[1]]
+	else:
+		p[0] = [p[1]] + p[3]
 
 # dictorsetmaker:  (test ':' test  (',' test ':' test)* [',']) 
 #					| (test  (',' test)* [',']) 
