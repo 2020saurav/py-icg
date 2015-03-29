@@ -69,24 +69,19 @@ def p_MarkerArg(p):
 
 # parameters: '(' [varargslist] ')'
 def p_parameters(p):
-	"""parameters : LPAREN varargslist RPAREN"""
+	"""parameters 	: LPAREN RPAREN 
+					| LPAREN varargslist RPAREN"""
 
-#varargslist: ( | fpdef ['=' test] (',' fpdef ['=' test])* [',']) 
-
+#varargslist: fpdef ['=' test] (',' fpdef ['=' test])* 
 def p_varargslist(p):
-    """varargslist 	:
-    				| fpdef EQUAL test fpdeflist COMMA
-    				| fpdef EQUAL test fpdeflist
-    				| fpdef fpdeflist COMMA
-    				| fpdef fpdeflist
-    """
-
-def p_fpdeflist(p):
-	"""fpdeflist 	:
-					| fpdeflist COMMA fpdef
-					| fpdeflist COMMA fpdef EQUAL test
+	"""varargslist 	: fpdef
+					| fpdef EQUAL test
 	"""
 
+def p_varargslistext(p):
+	"""varargslist 	: fpdef COMMA varargslist
+					| fpdef EQUAL test COMMA varargslist
+	"""
 # fpdef: NAME | '(' fplist ')'
 def p_fpdef(p):
 	"""fpdef 	: NAME 
@@ -95,13 +90,8 @@ def p_fpdef(p):
 
 # fplist: fpdef (',' fpdef)* [',']
 def p_fplist(p):
-	"""fplist 	: fpdef fplist1 COMMA
-				| fpdef fplist1	
-	"""
-# our temp symbol
-def p_fplist1(p):
-	"""fplist1 	:
-				| fplist1 COMMA fpdef
+	"""fplist 	: fpdef
+				| fpdef COMMA fplist	
 	"""
 
 # stmt: simple_stmt | compound_stmt
