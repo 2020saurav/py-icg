@@ -7,6 +7,7 @@ import sys
 from tac import *
 from symbolTable import *
 programLineOffset = 0
+haltExecution = False
 # file_input: (NEWLINE | stmt)* ENDMARKER
 def p_file_input(p):
 	"""file_input :	single_stmt ENDMARKER
@@ -210,17 +211,58 @@ def p_small_stmt(p):
 # 			p[0]['place'] = p[3]['place']	
 def p_expr_stmt(p):
 	"""expr_stmt 	: test EQUAL test
+					| test EQUAL function_call
 	"""
 	p[0] = dict()
 	place = ''
 	try:
 		p[1]['isArray']
 		try:
+			# a[i] = b[j]
 			p[3]['isArray']
+			if p[1]['type'] != p[3]['type']:
+				typeError(p)
+			width = getWidthFromType(p[1]['type'])
+			baseAddrLeft = getBaseAddress(getCurrentScope(), p[1]['name'])
+			indexLeft = getNewTempVar()
+			emit(getCurrentScope(), indexLeft, p[1]['place'], '', '=')
+			relativeAddrLeft = getNewTempVar()
+			emit(getCurrentScope(), relativeAddrLeft, indexLeft, width, '*')
+			absAddrLeft = getNewTempVar()
+			emit(getCurrentScope(), absAddrLeft, baseAddrLeft, relativeAddrLeft, '+')
+
+			baseAddrRight = getBaseAddress(getCurrentScope(), p[3]['name'])
+			indexRight = getNewTempVar()
+			emit(getCurrentScope(), indexRight, p[3]['place'], '', '=')
+			relativeAddrRight = getNewTempVar()
+			emit(getCurrentScope(), relativeAddrRight, indexRight, width, '*')
+			absAddrRight = getNewTempVar()
+			emit(getCurrentScope(), absAddrRight, baseAddrRight, relativeAddrRight, '+')
+			value = getNewTempVar()
+			emit(getCurrentScope(), value, absAddrRight, '', 'LW')
+			emit(getCurrentScope(), absAddrLeft, value, '', 'SW')
 		except:
-			pass
+			# a[i] = x
+			if p[1]['type'] != p[3]['type']:
+				typeError(p)
+			width = getWidthFromType(p[1]['type'])
+			baseAddr = getBaseAddress(getCurrentScope(), p[1]['name'])
+			index = getNewTempVar()
+			emit(getCurrentScope(), index, p[1]['place'], '', '=')
+			relativeAddr = getNewTempVar()
+			emit(getCurrentScope(), relativeAddr, index, width, '*')
+			absAddr = getNewTempVar()
+			emit(getCurrentScope(), absAddr, baseAddr, relativeAddr, '+')
+			try:
+				emit(getCurrentScope(), absAddr, p[3]['place'], '', 'SW')
+			except:		
+				referenceError(p)
+		
 	except:
+		if haltExecution:
+			sys.exit()
 		try:
+			# x = a[i]
 			p[3]['isArray']
 			width = getWidthFromType(p[3]['type'])
 			baseAddr = getBaseAddress(getCurrentScope(), p[3]['name'])
@@ -231,7 +273,7 @@ def p_expr_stmt(p):
 			absAddr = getNewTempVar()
 			emit(getCurrentScope(), absAddr, baseAddr, relativeAddr, '+')
 			value = getNewTempVar()
-			emit(getCurrentScope(), value, absAddr, '', 'LA')
+			emit(getCurrentScope(), value, absAddr, '', 'LW')
 
 			if exists(p[1]['name']):
 				addAttribute(p[1]['name'], 'type', p[3]['type'])
@@ -249,6 +291,7 @@ def p_expr_stmt(p):
 
 
 		except:
+			# x = y
 			if exists(p[1]['name']):
 				addAttribute(p[1]['name'], 'type', p[3]['type'])
 				if existsInCurrentScope(p[1]['name']):
@@ -266,38 +309,6 @@ def p_expr_stmt(p):
 			except:		
 				referenceError(p)
 
-
-def p_expr_stmt1(p):
-	"""expr_stmt 	: test EQUAL function_call
-	"""
-	p[0] = dict()
-	place = ''
-	if exists(p[1]['name']):
-		addAttribute(p[1]['name'], 'type', p[3]['type'])
-		if existsInCurrentScope(p[1]['name']):
-			place = getAttribute(p[1]['name'], getCurrentScope())
-		else:
-			place = getNewTempVar()
-			addAttribute(p[1]['name'], getCurrentScope(), place)
-	else:
-		addIdentifier(p[1]['name'], p[3]['type'])
-		place = getNewTempVar()
-		addAttribute(p[1]['name'], getCurrentScope(), place)
-	p[0]['nextlist'] = []
-	try:
-		emit(getCurrentScope(),place, p[3]['place'], '', '=')
-	except:		
-		referenceError(p)
-
-
-	# TODO Add functions for identifier declaration and assignment
-	# How about expr_stmt -> NAME EQUAL test ?
-# our new symbol
-## CHANGING GRAMMAR : No longer required
-# def p_eqtestlist(p):
-# 	"""eqtestlist 	:
-# 					| eqtestlist EQUAL testlist
-# 	"""
 
 # augassign: ('+=' | '-=' | '*=' | '/=' | '%=' | '**=' | '//=')
 ## CHANGING GRAMMAR : No longer required
@@ -523,7 +534,6 @@ def p_array(p):
 			p[0]['name'] = p[1]['name']
 			p[0]['type'] = p[1]['type']
 			p[0]['isArray'] = True
-			p[0]['baseAddr'] = 100 # TODO get this value using p[1]
 			p[0]['place'] = p[3]['place']			
 			
 
@@ -1017,6 +1027,8 @@ def p_stmts(p):
 	p[0]['endlist'] = merge(p[1].get('endlist', []), p[2].get('endlist', []))
 
 def p_error(p):
+	global haltExecution
+	haltExecution = True
 	try:
 		print "Syntax Error near '"+str(p.value)+ "' in line "+str(p.lineno - programLineOffset)
 	except:
@@ -1027,6 +1039,8 @@ def p_error(p):
 	sys.exit()
 
 def typeError(p):
+	global haltExecution
+	haltExecution = True
 	try:
 		print "Type Error near '"+str(p.value)+"' in line "+str(p.lineno - programLineOffset)
 	except:
@@ -1037,6 +1051,8 @@ def typeError(p):
 	sys.exit()
 
 def referenceError(p):
+	global haltExecution
+	haltExecution = True
 	try:
 		print "Reference Error near '"+str(p.value)+"' in line "+str(p.lineno - programLineOffset)
 	except:
@@ -1047,6 +1063,8 @@ def referenceError(p):
 	sys.exit()
 
 def redefinitionError(p):
+	global haltExecution
+	haltExecution = True
 	try:
 		print "Redefinition Error near '"+str(p.value)+"' in line "+str(p.lineno - programLineOffset)
 	except:
@@ -1057,6 +1075,8 @@ def redefinitionError(p):
 	sys.exit()
 
 def printError(p):
+	global haltExecution
+	haltExecution = True
 	try:
 		print "Print Error near '"+str(p.value)+"' in line "+str(p.lineno - programLineOffset)
 	except:
@@ -1087,8 +1107,8 @@ if __name__=="__main__":
 	sys.stderr = open('dump','w')
 	root =  z.parse(data)
 	sys.stderr.close()
-	call(["python","converter.py", filename])
-	s = filename
-	fname = "../"+s[s.find("/")+1:s.find(".py")]
-	call(["dot","-Tpng",fname+".dot","-o",fname+".png"])
-	call(["gnome-open",fname+".png"])
+	# call(["python","converter.py", filename])
+	# s = filename
+	# fname = "../"+s[s.find("/")+1:s.find(".py")]
+	# call(["dot","-Tpng",fname+".dot","-o",fname+".png"])
+	# call(["gnome-open",fname+".png"])

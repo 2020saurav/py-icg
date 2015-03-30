@@ -115,7 +115,7 @@ def getBaseAddress(scopeName, key):
 	return 100
 
 def getWidthFromType(identifierType):
-	 if identifierType == 'NUMBER':
+	if identifierType == 'NUMBER':
 		width = 4
 	elif identifierType == 'STRING':
 		width = 256
