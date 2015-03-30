@@ -6,7 +6,7 @@ from subprocess import call
 import sys
 from tac import *
 from symbolTable import *
-programLineOffset = 2
+programLineOffset = 0
 # file_input: (NEWLINE | stmt)* ENDMARKER
 def p_file_input(p):
 	"""file_input :	single_stmt ENDMARKER
@@ -203,9 +203,72 @@ def p_small_stmt(p):
 # 	"""
 ## CHANGING GRAMMAR : Removing fancy operations
 ## CHANGING GRAMMAR : Removing list assignment multiple
+#			p[0]['name'] = p[1]['name']
+# 			p[0]['type'] = p[1]['type']
+# 			p[0]['isArray'] = True
+# 			p[0]['baseAddr'] = 100 # TODO get this value using p[1]
+# 			p[0]['place'] = p[3]['place']	
 def p_expr_stmt(p):
 	"""expr_stmt 	: test EQUAL test
-					| test EQUAL function_call
+	"""
+	p[0] = dict()
+	place = ''
+	try:
+		p[1]['isArray']
+		try:
+			p[3]['isArray']
+		except:
+			pass
+	except:
+		try:
+			p[3]['isArray']
+			width = getWidthFromType(p[3]['type'])
+			baseAddr = getBaseAddress(getCurrentScope(), p[3]['name'])
+			index = getNewTempVar()
+			emit(getCurrentScope(), index, p[3]['place'], '', '=')
+			relativeAddr = getNewTempVar()
+			emit(getCurrentScope(), relativeAddr, index, width, '*')
+			absAddr = getNewTempVar()
+			emit(getCurrentScope(), absAddr, baseAddr, relativeAddr, '+')
+			value = getNewTempVar()
+			emit(getCurrentScope(), value, absAddr, '', 'LA')
+
+			if exists(p[1]['name']):
+				addAttribute(p[1]['name'], 'type', p[3]['type'])
+				if existsInCurrentScope(p[1]['name']):
+					place = getAttribute(p[1]['name'], getCurrentScope())
+				else:
+					place = getNewTempVar()
+					addAttribute(p[1]['name'], getCurrentScope(), place)
+			else:
+				addIdentifier(p[1]['name'], p[3]['type'])
+				place = getNewTempVar()
+				addAttribute(p[1]['name'], getCurrentScope(), place)
+			p[0]['nextlist'] = []
+			emit(getCurrentScope(),place, value, '', '=')
+
+
+		except:
+			if exists(p[1]['name']):
+				addAttribute(p[1]['name'], 'type', p[3]['type'])
+				if existsInCurrentScope(p[1]['name']):
+					place = getAttribute(p[1]['name'], getCurrentScope())
+				else:
+					place = getNewTempVar()
+					addAttribute(p[1]['name'], getCurrentScope(), place)
+			else:
+				addIdentifier(p[1]['name'], p[3]['type'])
+				place = getNewTempVar()
+				addAttribute(p[1]['name'], getCurrentScope(), place)
+			p[0]['nextlist'] = []
+			try:
+				emit(getCurrentScope(),place, p[3]['place'], '', '=')
+			except:		
+				referenceError(p)
+
+
+def p_expr_stmt1(p):
+	"""expr_stmt 	: test EQUAL function_call
 	"""
 	p[0] = dict()
 	place = ''
@@ -225,7 +288,6 @@ def p_expr_stmt(p):
 		emit(getCurrentScope(),place, p[3]['place'], '', '=')
 	except:		
 		referenceError(p)
-	# printST()
 
 
 	# TODO Add functions for identifier declaration and assignment
@@ -442,7 +504,7 @@ def p_suite(p):
 		p[0] = p[3]
 
 def p_array(p):
-	"""test 	: NAME LSQB test_expr RSQB
+	"""test 	: atom LSQB test_expr RSQB
 				| test_expr 
 	"""
 	if len(p) == 2:
@@ -451,7 +513,18 @@ def p_array(p):
 		if p[3]['type'] != 'NUMBER':
 			referenceError(p)
 		else:
-			pass
+			try:
+				p[1]['isIdentifier']
+			except:
+				referenceError(p[1])
+			# set values to propagate above uptil test = test.
+			# to handle a[i] = x, x = a[i] and a[i] = a[j]
+			p[0] = dict()
+			p[0]['name'] = p[1]['name']
+			p[0]['type'] = p[1]['type']
+			p[0]['isArray'] = True
+			p[0]['baseAddr'] = 100 # TODO get this value using p[1]
+			p[0]['place'] = p[3]['place']			
 			
 
 # test: or_test
@@ -749,6 +822,7 @@ def p_atom1(p):
 		p[0]['name'] = p[1]
 		p[0]['type'] = getAttribute(p[1], 'type')
 		p[0]['place'] = getAttribute(p[1], getCurrentScope())
+		p[0]['isIdentifier'] = True
 		# TODO may need to add more keys like offset and scopename
 	else:
 		p[0]['name'] = p[1]
@@ -1007,15 +1081,14 @@ class G1Parser(object):
 if __name__=="__main__":
 	z = G1Parser()
 	# filename = sys.argv[1]
-	filename = "../test/func.py"
+	filename = "../test/assignment.py"
 	sourcefile = open(filename)
 	data = sourcefile.read()
-	data = "True = 1\nFalse = 0\n" + data
 	sys.stderr = open('dump','w')
 	root =  z.parse(data)
 	sys.stderr.close()
-	# call(["python","converter.py", filename])
-	# s = filename
-	# fname = "../"+s[s.find("/")+1:s.find(".py")]
-	# call(["dot","-Tpng",fname+".dot","-o",fname+".png"])
-	# call(["gnome-open",fname+".png"])
+	call(["python","converter.py", filename])
+	s = filename
+	fname = "../"+s[s.find("/")+1:s.find(".py")]
+	call(["dot","-Tpng",fname+".dot","-o",fname+".png"])
+	call(["gnome-open",fname+".png"])
