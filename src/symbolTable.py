@@ -54,18 +54,7 @@ def addScope(scopeName):
 def addIdentifier(identifier, identifierType):
 	global scopeStack
 	currentScope = scopeStack[len(scopeStack) - 1]
-	if identifierType == 'NUMBER':
-		width = 4
-	elif identifierType == 'STRING':
-		width = 256
-	elif identifierType == 'UNDEFINED':
-		width = 0
-	elif identifierType == 'FUNCTION':
-		width = 4
-	elif identifierType == 'BOOLEAN':
-		width = 1
-	else:
-		width = 0
+	width = getWidthFromType(identifierType)
 	# TODO Add other types
 
 	currentOffset = offsetStack.pop()
@@ -121,3 +110,21 @@ def getAttributeFromFunctionList(function, key):
 		return functionlist[function][key]
 	else :
 		return None 	
+
+def getBaseAddress(scopeName, key):
+	return 100
+
+def getWidthFromType(identifierType):
+	 if identifierType == 'NUMBER':
+		width = 4
+	elif identifierType == 'STRING':
+		width = 256
+	elif identifierType == 'UNDEFINED':
+		width = 0
+	elif identifierType == 'FUNCTION':
+		width = 4
+	elif identifierType == 'BOOLEAN':
+		width = 1
+	else:
+		width = 0
+	return width
