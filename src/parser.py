@@ -6,6 +6,7 @@ from subprocess import call
 import sys
 from tac import *
 from symbolTable import *
+programLineOffset = 2
 # file_input: (NEWLINE | stmt)* ENDMARKER
 def p_file_input(p):
 	"""file_input :	single_stmt ENDMARKER
@@ -361,9 +362,11 @@ def p_if_stmt(p):
 				|	IF test COLON MarkerIf suite ELSE COLON MarkerElse suite
 	"""
 	p[0] = dict()
+	
 	if p[2]['type'] != 'BOOLEAN':
+		# print 1
 		typeError(p)
-		
+
 	if len(p) == 6:
 		p[0]['nextlist'] = merge(p[4].get('falselist', []), p[5].get('nextlist', []))
 		p[0]['beginlist'] = p[5].get('beginlist', [])
@@ -438,9 +441,22 @@ def p_suite(p):
 	else:
 		p[0] = p[3]
 
+def p_array(p):
+	"""test 	: NAME LSQB test_expr RSQB
+				| test_expr 
+	"""
+	if len(p) == 2:
+		p[0] = p[1]
+	else :
+		if p[3]['type'] != 'NUMBER':
+			referenceError(p)
+		else:
+			pass
+			
+
 # test: or_test
 def p_test(p):
-	"""test 	: or_test
+	"""test_expr 	: or_test
 	"""
 	p[0] = p[1]
 
@@ -453,6 +469,7 @@ def p_or_test(p):
 	if len(p)==2:
 		p[0] = p[1]
 	else:
+		# print p[1]
 		if p[1]['type'] == p[3]['type'] == 'BOOLEAN':
 			p[0] = dict()
 			p[0]['place'] = getNewTempVar()
@@ -461,6 +478,7 @@ def p_or_test(p):
 		else:
 			if(p[1]['type']=='REFERENCE_ERROR' or p[3]['type']=='REFERENCE_ERROR'):
 				referenceError(p)
+			# print 2
 			typeError(p)		
 
 # and_test: not_test ('and' not_test)*
@@ -479,6 +497,7 @@ def p_and_test(p):
 		else:
 			if(p[1]['type']=='REFERENCE_ERROR' or p[3]['type']=='REFERENCE_ERROR'):
 				referenceError(p)
+			# print 3
 			typeError(p)
 
 # not_test: 'not' not_test | comparison
@@ -497,6 +516,7 @@ def p_not_test(p):
 		else:
 			if(p[2]['type']=='REFERENCE_ERROR'):
 				referenceError(p)
+			# print 4
 			typeError(p)
 
 # comparison: expr (comp_op expr)*
@@ -511,12 +531,13 @@ def p_comparision(p):
 	if len(p)==2:
 		p[0] = p[1]
 	elif len(p)==4:
-		if p[1]['type'] == p[3]['type']=='NUMBER':
+		if p[1]['type'] in ['NUMBER', 'BOOLEAN'] and  p[3]['type'] in ['NUMBER', 'BOOLEAN']:
 			pass
 			# okay : Nothing to do here
 		else:
 			if(p[1]['type']=='REFERENCE_ERROR' or p[3]['type']=='REFERENCE_ERROR'):
 				referenceError(p)
+			# print 5
 			typeError(p)
 		p[0] = dict()
 		p[0]['type'] = 'BOOLEAN'
@@ -637,7 +658,7 @@ def p_arith_expr(p):
 	if len(p)==2:
 		p[0] = p[1]
 	else:
-		if p[1]['type'] == p[3]['type'] == 'NUMBER':
+		if p[1]['type'] in ['NUMBER', 'BOOLEAN', 'UNDEFINED'] and  p[3]['type'] in ['NUMBER', 'BOOLEAN', 'UNDEFINED']:
 			p[0] = dict()
 			p[0]['place'] = getNewTempVar()
 			p[0]['type'] = 'NUMBER'
@@ -923,53 +944,53 @@ def p_stmts(p):
 
 def p_error(p):
 	try:
-		print "Syntax Error near '"+str(p.value)+ "' in line "+str(p.lineno)
+		print "Syntax Error near '"+str(p.value)+ "' in line "+str(p.lineno - programLineOffset)
 	except:
 		try:
-			print "Syntax Error in line "+str(p.lineno)
+			print "Syntax Error in line "+str(p.lineno - programLineOffset)
 		except:
 			print "Syntax Error"
 	sys.exit()
 
 def typeError(p):
 	try:
-		print "Type Error near '"+str(p.value)+"' in line "+str(p.lineno)
+		print "Type Error near '"+str(p.value)+"' in line "+str(p.lineno - programLineOffset)
 	except:
 		try:
-			print "Type Error in line "+str(p.lineno)
+			print "Type Error in line "+str(p.lineno - programLineOffset)
 		except:
 			print "Type Error"
 	sys.exit()
 
 def referenceError(p):
 	try:
-		print "Reference Error near '"+str(p.value)+"' in line "+str(p.lineno)
+		print "Reference Error near '"+str(p.value)+"' in line "+str(p.lineno - programLineOffset)
 	except:
 		try:
-			print "Reference Error in line "+str(p.lineno)
+			print "Reference Error in line "+str(p.lineno - programLineOffset)
 		except:
 			print "Reference Error"
 	sys.exit()
 
 def redefinitionError(p):
 	try:
-		print "Redefinition Error near '"+str(p.value)+"' in line "+str(p.lineno)
+		print "Redefinition Error near '"+str(p.value)+"' in line "+str(p.lineno - programLineOffset)
 	except:
 		try:
-			print "Redefinition Error in line "+str(p.lineno)
+			print "Redefinition Error in line "+str(p.lineno - programLineOffset)
 		except:
 			print "Redefinition Error"
 	sys.exit()
 
 def printError(p):
 	try:
-		print "Print Error near '"+str(p.value)+"' in line "+str(p.lineno)
+		print "Print Error near '"+str(p.value)+"' in line "+str(p.lineno - programLineOffset)
 	except:
 		try:
-			print "Print Error in line "+str(p.lineno)
+			print "Print Error in line "+str(p.lineno - programLineOffset)
 		except:
 			print "Print Error"
-	# sys.exit()
+	sys.exit()
 
 
 class G1Parser(object):
@@ -986,9 +1007,10 @@ class G1Parser(object):
 if __name__=="__main__":
 	z = G1Parser()
 	# filename = sys.argv[1]
-	filename = "../test/test1.py"
+	filename = "../test/func.py"
 	sourcefile = open(filename)
 	data = sourcefile.read()
+	data = "True = 1\nFalse = 0\n" + data
 	sys.stderr = open('dump','w')
 	root =  z.parse(data)
 	sys.stderr.close()
