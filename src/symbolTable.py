@@ -10,7 +10,7 @@ symbolTable = {
 		"returnType"	: "UNDEFINED",
 	}
 }
-
+stackHistory = []
 offsetStack	= [0]
 functionlist = {'program':symbolTable['program']}
 scopeStack	= [symbolTable["program"]]
@@ -97,9 +97,10 @@ def existsInCurrentScope(identifier):
 	return scopeStack[len(scopeStack)-1].get(identifier, False) != False
 
 def removeCurrentScope():
-	global scopeStack
+	global scopeStack, stackHistory
 	currentScope = scopeStack.pop()
 	currentScope["width"] = offsetStack.pop()
+	stackHistory.append(currentScope)
 
 # print scopeStack
 def printST():
@@ -128,3 +129,6 @@ def getWidthFromType(identifierType):
 	else:
 		width = 0
 	return width
+
+def SymbolTableHistory():
+	print stackHistory

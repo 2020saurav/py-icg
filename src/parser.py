@@ -57,7 +57,7 @@ def p_MarkerScope(p):
 	p[0] = dict()
 	p[0]['name'] = p[-1]
 	if existsInCurrentScope(p[0]['name']):
-		redefinitionError(p[0]['name'])
+		error('Redefinition', p[0]['name'])
 	else:
 		addIdentifier(p[0]['name'], 'FUNCTION')
 		place = getNewTempVar()
@@ -72,7 +72,7 @@ def p_MarkerArg(p):
 	"""
 	for arg in p[-1]:
 		if existsInCurrentScope(arg):
-			redefinitionError(arg)
+			error('Redefinition', arg)
 		else:
 			addIdentifier(arg, 'UNDEFINED')
 			place = getNewTempVar()
@@ -95,7 +95,7 @@ def p_function_call(p):
 	p[0] = dict()
 	place = ''
 	if not exists(p[1]):
-		referenceError(p[1])
+		error('Reference', p[1])
 	else :
 		identifierType = getAttribute(p[1], 'type')
 		if identifierType == 'FUNCTION':
@@ -114,7 +114,7 @@ def p_function_call(p):
 			emit(getCurrentScope(), returnPlace, '', '', 'FUNCTION_RETURN')
 			p[0]['place'] = returnPlace
 		else :
-			referenceError(p[1])
+			error('Reference', p[1])
 	# p[0]['type'] = 'UNDEFINED'
 #varargslist: fpdef ['=' test] (',' fpdef ['=' test])* 
 def p_varargslist(p):
@@ -218,7 +218,7 @@ def p_expr_stmt(p):
 			# a[i] = b[j]
 			p[3]['isArray']
 			if p[1]['type'] != p[3]['type']:
-				typeError(p)
+				error('Type', p)
 			width = getWidthFromType(p[1]['type'])
 			baseAddrLeft = getBaseAddress(getCurrentScope(), p[1]['name'])
 			indexLeft = getNewTempVar()
@@ -241,7 +241,7 @@ def p_expr_stmt(p):
 		except:
 			# a[i] = x
 			if p[1]['type'] != p[3]['type']:
-				typeError(p)
+				error('Type', p)
 			width = getWidthFromType(p[1]['type'])
 			baseAddr = getBaseAddress(getCurrentScope(), p[1]['name'])
 			index = getNewTempVar()
@@ -253,7 +253,7 @@ def p_expr_stmt(p):
 			try:
 				emit(getCurrentScope(), absAddr, p[3]['place'], '', 'SW')
 			except:		
-				referenceError(p)
+				error('Reference', p)
 		
 	except:
 		if haltExecution:
@@ -305,7 +305,7 @@ def p_expr_stmt(p):
 				emit(getCurrentScope(),place, p[3]['place'], '', '=')
 				# TODO check if isList, pass one arg as ARRAY
 			except:		
-				referenceError(p)
+				error('Reference', p)
 
 
 # augassign: ('+=' | '-=' | '*=' | '/=' | '%=' | '**=' | '//=')
@@ -330,7 +330,7 @@ def p_print_stmt(p):
 		for item in p[2]:
 			itemType = item.get('type')
 			if itemType not in ['STRING', 'NUMBER', 'BOOLEAN', 'UNDEFINED']:
-				printError(p)
+				error('Print', p)
 			emit(getCurrentScope(), item['place'], '', itemType, 'PRINT')
 		emit(getCurrentScope(), '"\n"', '', 'STRING', 'PRINT')
 
@@ -388,7 +388,7 @@ def p_return_stmt(p):
 			else:
 				addAttributeToCurrentScope('returnType', p[2]['type'])
 		elif p[2]['type'] != returnType:
-			typeError(p)
+			error('Type', p)
 		else:
 			pass
 		emit(getCurrentScope(), p[2]['place'], '', '', 'RETURN')
@@ -442,7 +442,7 @@ def p_if_stmt(p):
 	
 	if p[2]['type'] != 'BOOLEAN':
 		# print 1
-		typeError(p)
+		error('Type', p)
 
 	if len(p) == 6:
 		p[0]['nextlist'] = merge(p[4].get('falselist', []), p[5].get('nextlist', []))
@@ -460,7 +460,7 @@ def p_while_stmt(p):
 	"""while_stmt 	:	WHILE Marker test COLON MarkerWhile suite 
 	"""
 	if p[3]['type'] != 'BOOLEAN':
-		typeError(p)
+		error('Type', p)
 	
 	p[0] = dict()
 	p[0]['type'] = 'VOID'
@@ -523,7 +523,7 @@ def p_MarkerFor(p):
 	try:
 		p[-2]['isList']
 	except:
-		notArrayError(p[-2])
+		error('Not an array', p[-2])
 	if exists(p[-4]['name']):
 		place = p[-4]['place']
 		p[-4]['type'] = p[-2]['type']
@@ -567,12 +567,12 @@ def p_array(p):
 		p[0] = p[1]
 	else :
 		if p[3]['type'] != 'NUMBER':
-			referenceError(p)
+			error('Reference', p)
 		else:
 			try:
 				p[1]['isIdentifier']
 			except:
-				referenceError(p[1])
+				error('Reference', p[1])
 			# set values to propagate above uptil test = test.
 			# to handle a[i] = x, x = a[i] and a[i] = a[j]
 			p[0] = dict()
@@ -605,9 +605,9 @@ def p_or_test(p):
 			emit(getCurrentScope(),p[0]['place'], p[1]['place'], p[3]['place'], p[2])
 		else:
 			if(p[1]['type']=='REFERENCE_ERROR' or p[3]['type']=='REFERENCE_ERROR'):
-				referenceError(p)
+				error('Reference', p)
 			# print 2
-			typeError(p)		
+			error('Type', p)		
 
 # and_test: not_test ('and' not_test)*
 def p_and_test(p):
@@ -624,9 +624,9 @@ def p_and_test(p):
 			emit(getCurrentScope(),p[0]['place'], p[1]['place'], p[3]['place'], p[2])
 		else:
 			if(p[1]['type']=='REFERENCE_ERROR' or p[3]['type']=='REFERENCE_ERROR'):
-				referenceError(p)
+				error('Reference', p)
 			# print 3
-			typeError(p)
+			error('Type', p)
 
 # not_test: 'not' not_test | comparison
 def p_not_test(p):
@@ -643,9 +643,9 @@ def p_not_test(p):
 			emit(getCurrentScope(),p[0]['place'], p[2]['place'],'', p[1])
 		else:
 			if(p[2]['type']=='REFERENCE_ERROR'):
-				referenceError(p)
+				error('Reference', p)
 			# print 4
-			typeError(p)
+			error('Type', p)
 
 # comparison: expr (comp_op expr)*
 # def p_comparision(p):
@@ -664,9 +664,9 @@ def p_comparision(p):
 			# okay : Nothing to do here
 		else:
 			if(p[1]['type']=='REFERENCE_ERROR' or p[3]['type']=='REFERENCE_ERROR'):
-				referenceError(p)
+				error('Reference', p)
 			# print 5
-			typeError(p)
+			error('Type', p)
 		p[0] = dict()
 		p[0]['type'] = 'BOOLEAN'
 		p[0]['place'] = getNewTempVar()
@@ -719,8 +719,8 @@ def p_expr(p):
 			emit(getCurrentScope(),p[0]['place'], p[1]['place'], p[3]['place'], p[2])
 		else:
 			if(p[1]['type']=='REFERENCE_ERROR' or p[3]['type']=='REFERENCE_ERROR'):
-				referenceError(p)
-			typeError(p)
+				error('Reference', p)
+			error('Type', p)
 
 # xor_expr: and_expr ('^' and_expr)*
 def p_xor_expr(p):
@@ -737,8 +737,8 @@ def p_xor_expr(p):
 			emit(getCurrentScope(),p[0]['place'], p[1]['place'], p[3]['place'], p[2])
 		else:
 			if(p[1]['type']=='REFERENCE_ERROR' or p[3]['type']=='REFERENCE_ERROR'):
-				referenceError(p)
-			typeError(p)
+				error('Reference', p)
+			error('Type', p)
 
 # and_expr: shift_expr ('&' shift_expr)*
 def p_and_expr(p):
@@ -755,8 +755,8 @@ def p_and_expr(p):
 			emit(getCurrentScope(),p[0]['place'], p[1]['place'], p[3]['place'], p[2])
 		else:
 			if(p[1]['type']=='REFERENCE_ERROR' or p[3]['type']=='REFERENCE_ERROR'):
-				referenceError(p)
-			typeError(p)
+				error('Reference', p)
+			error('Type', p)
 
 # shift_expr: arith_expr (('<<'|'>>') arith_expr)*
 def p_shift_expr(p):
@@ -774,8 +774,8 @@ def p_shift_expr(p):
 			emit(getCurrentScope(),p[0]['place'], p[1]['place'], p[3]['place'], p[2])
 		else:
 			if(p[1]['type']=='REFERENCE_ERROR' or p[3]['type']=='REFERENCE_ERROR'):
-				referenceError(p)
-			typeError(p)
+				error('Reference', p)
+			error('Type', p)
 
 # arith_expr: term (('+'|'-') term)*
 def p_arith_expr(p):
@@ -793,8 +793,8 @@ def p_arith_expr(p):
 			emit(getCurrentScope(),p[0]['place'], p[1]['place'], p[3]['place'], p[2])
 		else:
 			if(p[1]['type']=='REFERENCE_ERROR' or p[3]['type']=='REFERENCE_ERROR'):
-				referenceError(p)
-			typeError(p)
+				error('Reference', p)
+			error('Type', p)
 
 
 # term: factor (('*'|'/'|'%'|'//') factor)*
@@ -814,8 +814,8 @@ def p_term(p):
 			emit(getCurrentScope(), p[0]['place'], p[1]['place'], p[3]['place'], p[2])
 		else:
 			if(p[1]['type']=='REFERENCE_ERROR' or p[3]['type']=='REFERENCE_ERROR'):
-				referenceError(p)
-			typeError(p)
+				error('Reference', p)
+			error('Type', p)
 
 # factor: ('+'|'-') factor | power
 def p_factor(p):
@@ -827,7 +827,7 @@ def p_factor(p):
 		p[0] = p[1]
 	else:
 		if p[2]['type'] != 'NUMBER':
-			typeError(p)
+			error('Type', p)
 		p[0] = dict()
 		p[0]['place'] = getNewTempVar()
 		p[0]['type'] = 'NUMBER'
@@ -946,16 +946,16 @@ def p_listmaker(p):
 			p[0]['place'] = [p[1]['place']]
 			p[0]['type'] = p[1]['type']
 		except:
-			referenceError(p)
+			error('Reference', p)
 	else:
 		if p[3]['type'] != p[1]['type']:
-			typeError(p)
+			error('Type', p)
 		else:
 			try:
 				p[0]['place'] = [p[1]['place']] + p[3]['place']
 				p[0]['type'] = p[1]['type']
 			except:
-				referenceError(p)
+				error('Reference', p)
 
 # testlist_comp: test (',' test)* [','] 
 def p_testlist_comp(p):
@@ -1084,67 +1084,17 @@ def p_error(p):
 			print "Syntax Error"
 	sys.exit()
 
-def typeError(p):
+def error(errorType, p):
 	global haltExecution
 	haltExecution = True
 	try:
-		print "Type Error near '"+str(p.value)+"' in line "+str(p.lineno - programLineOffset)
+		print errorType +" Error near '"+str(p.value)+"' in line "+str(p.lineno - programLineOffset)
 	except:
 		try:
-			print "Type Error in line "+str(p.lineno - programLineOffset)
+			print errorType + " Error in line "+str(p.lineno - programLineOffset)
 		except:
-			print "Type Error"
+			print errorType + " Error"
 	sys.exit()
-
-def referenceError(p):
-	global haltExecution
-	haltExecution = True
-	try:
-		print "Reference Error near '"+str(p.value)+"' in line "+str(p.lineno - programLineOffset)
-	except:
-		try:
-			print "Reference Error in line "+str(p.lineno - programLineOffset)
-		except:
-			print "Reference Error"
-	sys.exit()
-
-def redefinitionError(p):
-	global haltExecution
-	haltExecution = True
-	try:
-		print "Redefinition Error near '"+str(p.value)+"' in line "+str(p.lineno - programLineOffset)
-	except:
-		try:
-			print "Redefinition Error in line "+str(p.lineno - programLineOffset)
-		except:
-			print "Redefinition Error"
-	sys.exit()
-
-def printError(p):
-	global haltExecution
-	haltExecution = True
-	try:
-		print "Print Error near '"+str(p.value)+"' in line "+str(p.lineno - programLineOffset)
-	except:
-		try:
-			print "Print Error in line "+str(p.lineno - programLineOffset)
-		except:
-			print "Print Error"
-	sys.exit()
-
-def notArrayError(p):
-	global haltExecution
-	haltExecution = True
-	try:
-		print "Not an array Error near '"+str(p.value)+"' in line "+str(p.lineno - programLineOffset)
-	except:
-		try:
-			print "Not an array in line "+str(p.lineno - programLineOffset)
-		except:
-			print "Not an array Error"
-	sys.exit()
-
-
 
 class G1Parser(object):
 	def __init__(self, mlexer=None):
