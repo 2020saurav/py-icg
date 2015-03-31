@@ -205,11 +205,7 @@ def p_small_stmt(p):
 # 	"""
 ## CHANGING GRAMMAR : Removing fancy operations
 ## CHANGING GRAMMAR : Removing list assignment multiple
-#			p[0]['name'] = p[1]['name']
-# 			p[0]['type'] = p[1]['type']
-# 			p[0]['isArray'] = True
-# 			p[0]['baseAddr'] = 100 # TODO get this value using p[1]
-# 			p[0]['place'] = p[3]['place']	
+	
 def p_expr_stmt(p):
 	"""expr_stmt 	: test EQUAL test
 					| test EQUAL function_call
@@ -347,11 +343,17 @@ def p_print_stmt(p):
 # flow_stmt: break_stmt | continue_stmt | return_stmt 
 def p_flow_stmt(p):
 	"""flow_stmt 	: break_stmt Marker
-					| continue_stmt Marker
 					| return_stmt Marker
 	"""
 	p[0] = p[1]
 	backpatch(getCurrentScope(), p[1].get('nextlist', []), p[2]['quad'])
+
+
+def p_flow_stmt2(p):
+	"""flow_stmt 	: continue_stmt Marker
+	"""
+	p[0] = p[1]
+	backpatch(getCurrentScope(), p[1].get('beginlist', []), p[2]['quad'])
 
 # break_stmt: 'break'
 def p_break_stmt(p):
@@ -528,7 +530,7 @@ def p_MarkerFor(p):
 	else:
 		addIdentifier(p[-4]['name'], p[-2]['type'])
 		place = getNewTempVar()
-		addAttribute(p[-4]['name'], 'place', place)
+		addAttribute(p[-4]['name'], getCurrentScope(), place)
 	index = getNewTempVar()
 	emit(getCurrentScope(), index, 0, '', '=')
 	array = getNewTempVar()
@@ -538,7 +540,7 @@ def p_MarkerFor(p):
 	emit(getCurrentScope(), length, size, '', '=')
 	condition = getNewTempVar()
 	p[0]['quad'] = getNextQuad(getCurrentScope())
-	emit(getCurrentScope(), condition, index, size, '==')
+	emit(getCurrentScope(), condition, index, length, '==')
 	p[0]['falselist'] = [getNextQuad(getCurrentScope())]
 	emit(getCurrentScope(), condition, 1, -1, 'COND_GOTO')
 	emit(getCurrentScope(), place, array+'['+index+']', '', '=')
