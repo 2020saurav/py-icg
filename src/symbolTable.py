@@ -130,5 +130,11 @@ def getWidthFromType(identifierType):
 		width = 0
 	return width
 
-def SymbolTableHistory():
-	print stackHistory
+def printSymbolTableHistory():
+	print "\n\n SYMBOL TABLE"
+	print     "--------------"
+	for st in stackHistory:
+		print "\nSCOPE: " + st['scopeName']
+		print "-----------------------"
+		pprint.pprint (st)
+		print "-----------------------\n"

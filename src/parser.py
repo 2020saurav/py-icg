@@ -13,13 +13,11 @@ def p_file_input(p):
 	"""file_input :	single_stmt ENDMARKER
 	"""
 	p[0] = p[1]
-	# noop(getCurrentScope(), p[1]['beginlist'])
-	# noop(getCurrentScope(), p[1]['endlist'])
 	emit(getCurrentScope(), '','', -1, 'HALT')
 	addAttributeToCurrentScope('numParam', 0)
 	removeCurrentScope()
 	printCode()
-	# printST()
+	printSymbolTableHistory()
 
 # Our temporary symbol
 def p_single_stmt(p):
@@ -44,7 +42,6 @@ def p_funcdef(p):
     noop(getCurrentScope(), p[7]['beginlist'])
     noop(getCurrentScope(), p[7]['endlist'])
     emit(getCurrentScope(), '', '', '', 'JUMP_RETURN')
-    # print getCurrentScope()
     removeCurrentScope()
     p[0] = dict()
     p[0]['type'] = 'FUNCTION'
@@ -178,16 +175,6 @@ def p_small_stmts(p):
 # small_stmt: 	expr_stmt 	| print_stmt   	| 
 #			  	pass_stmt 	| flow_stmt 	|assert_stmt|
 #    			import_stmt | global_stmt 	
-
-# def p_small_stmt(p):
-# 	"""small_stmt 	: flow_stmt
-# 					| expr_stmt
-# 					| print_stmt
-# 					| pass_stmt
-# 					| import_stmt
-# 					| global_stmt
-# 					| assert_stmt
-# 					"""
 ## CHANGING GRAMMAR : pass, import, global, assert : not urgent
 def p_small_stmt(p):
 	"""small_stmt 	: flow_stmt Marker
@@ -421,7 +408,6 @@ def p_compound_stmt(p):
 						| for_stmt Marker
 						| while_stmt Marker
 						| funcdef Marker
-						| classdef Marker
 						| function_call Marker
 	"""
 	p[0] = p[1]
@@ -430,10 +416,7 @@ def p_compound_stmt(p):
 
 
 # if_stmt: 'if' test ':' suite ('elif' test ':' suite)* ['else' ':' suite]
-# def p_if_stmt(p):
-# 	"""if_stmt 	:	IF test COLON suite elif_list
-# 				|	IF test COLON suite elif_list ELSE COLON suite
-# 	"""
+
 def p_if_stmt(p):
 	"""if_stmt 	:	IF test COLON MarkerIf suite
 				|	IF test COLON MarkerIf suite ELSE COLON MarkerElse suite
@@ -500,12 +483,7 @@ def p_MarkerElse(p):
 
 
 # for_stmt: 'for' exprlist 'in' testlist ':' suite ['else' ':' suite]
-# def p_for_stmt(p): 
-# 	"""for_stmt 	:	FOR exprlist IN testlist COLON suite
-# 					|	FOR exprlist IN testlist COLON suite ELSE COLON suite
-# 	"""
-## CHANGING GRAMMAR : Removing ELSE from FOR statement
-## CHANGING GRAMMAR : Simplifying for loop for single iterator
+
 def p_for_stmt(p): 
 	"""for_stmt 	:	FOR atom IN atom COLON MarkerFor suite
 	"""
@@ -606,7 +584,6 @@ def p_or_test(p):
 		else:
 			if(p[1]['type']=='REFERENCE_ERROR' or p[3]['type']=='REFERENCE_ERROR'):
 				error('Reference', p)
-			# print 2
 			error('Type', p)		
 
 # and_test: not_test ('and' not_test)*
@@ -625,7 +602,6 @@ def p_and_test(p):
 		else:
 			if(p[1]['type']=='REFERENCE_ERROR' or p[3]['type']=='REFERENCE_ERROR'):
 				error('Reference', p)
-			# print 3
 			error('Type', p)
 
 # not_test: 'not' not_test | comparison
@@ -647,11 +623,6 @@ def p_not_test(p):
 			# print 4
 			error('Type', p)
 
-# comparison: expr (comp_op expr)*
-# def p_comparision(p):
-# 	"""comparison 	: expr compexprlist
-# 	"""
-## CHANGING GRAMMAR : comparision expression shortened, one at a time
 def p_comparision(p):
 	"""comparison 	: 	expr
 					|	expr comp_op expr
@@ -672,27 +643,7 @@ def p_comparision(p):
 		p[0]['place'] = getNewTempVar()
 		emit(getCurrentScope(),p[0]['place'], p[1]['place'], p[3]['place'], p[2])
 
-
-## CHANGING GRAMMAR : No longer needed
-# our new symbol
-# def p_compexprlist(p):
-# 	"""compexprlist 	:
-# 						| comp_op expr compexprlist
-# 	"""
-
 # comp_op: '<'|'>'|'=='|'>='|'<='|'!='|'in'|'not' 'in'|'is'|'is' 'not'
-# def p_comp_op(p):
-# 	"""comp_op 	: LESS
-# 				| GREATER
-# 				| EQEQUAL
-# 				| GREATEREQUAL
-# 				| LESSEQUAL
-# 				| NOTEQUAL
-# 				| IN
-# 				| NOT IN
-# 				| IS
-# 				| IS NOT
-# 	"""
 ## CHANGING GRAMMAR : Withdrawing support of IN and IS
 def p_comp_op(p):
 	"""comp_op 	: LESS
@@ -837,37 +788,7 @@ def p_power(p):
 	"""power 	: atom
 	"""
 	p[0] = p[1]
-# our new symbol
-# CHANGING GRAMMAR : not needed, unless above is reverted
-# def p_trailerlist(p):
-# 	"""trailerlist 	: 
-# 					| trailer trailerlist
-# 	"""
 
-# atom: ('(' [testlist_comp] ')' |
-#       '[' [listmaker] ']' |
-#       '{' [dictorsetmaker] '}' |
-#       '`' testlist1 '`' |
-#       NAME | NUMBER | STRING+)
-# def p_atom(p):
-# 	"""atom 	: LPAREN RPAREN
-# 				| LPAREN testlist_comp RPAREN
-# 				| LSQB RSQB
-# 				| LSQB listmaker RSQB
-# 				| LBRACE RBRACE
-# 				| LBRACE dictorsetmaker RBRACE
-# 				| BACKQUOTE testlist1 BACKQUOTE
-# 				| NAME
-# 				| NUMBER
-# 				| FNUMBER
-# 				| stringlist
-# 	"""
-## CHANGING GRAMMAR: separating out to give types
-def p_atom(p):
-	"""atom 	: LBRACE RBRACE
-				| LBRACE dictorsetmaker RBRACE
-				| BACKQUOTE testlist1 BACKQUOTE
-	"""
 def p_atom1(p):
 	'''atom :	NAME
 	'''
@@ -892,13 +813,6 @@ def p_atom2(p):
 	p[0]['type'] = 'NUMBER'
 	p[0]['place'] = p[1]
 	# need to do symbol table thing, type attribution
-# our new symbol
-# def p_stringlist(p):
-# 	"""stringlist 	: STRING 
-# 					| STRING stringlist
-# 					| TRIPLESTRING
-# 					| TRIPLESTRING stringlist
-# 	"""
 
 def p_atom3(p):
 	"""atom		:	STRING
@@ -968,53 +882,6 @@ def p_testlist_comp(p):
 		p[0] = [p[1]] + p[2]
 		# Not very sure.
 
-# CHANGING GRAMMAR : May be dangerous. Need to revert above trailerlist too
-# trailer: '(' [arglist] ')' | '[' subscriptlist ']' | '.' NAME
-# def p_trailer(p):
-# 	"""trailer 	: LPAREN RPAREN
-# 				| LPAREN arglist RPAREN
-# 				| LSQB subscriptlist RSQB
-# 				| DOT NAME
-# 	"""
-
-# CHANGING GRAMMAR : May be dangerous. Need to revert above trailerlist too
-# subscriptlist: subscript (',' subscript)* [',']
-# def p_subscriptlist(p):
-# 	"""subscriptlist 	: subscript
-# 						| subscript COMMA
-# 						| subscript COMMA subscriptlist
-# 	"""
-
-# subscript: '.' '.' '.' | test | [test] ':' [test] [sliceop]
-# CHANGING GRAMMAR : May be dangerous. Need to revert above trailerlist too
-# def p_subscript(p):
-# 	"""subscript 	: DOT DOT DOT
-# 					| test
-# 					| test COLON test sliceop
-# 					| COLON test sliceop
-# 					| test COLON sliceop
-# 					| test COLON test
-# 					| test COLON
-# 					| COLON test
-# 					| COLON sliceop
-# 					| COLON
-# 	"""
-
-# sliceop: ':' [test]
-# CHANGING GRAMMAR : May be dangerous. Need to revert above trailerlist too
-# def p_sliceop(p):
-# 	"""sliceop 	: COLON
-# 				| COLON test
-# 	"""
-
-# exprlist: expr (',' expr)* [',']
-## CHANGING GRAMMAR : MAY MAY MAY not be needed.
-# def p_exprlist(p):
-# 	"""exprlist 	: expr
-# 					| expr COMMA
-# 					| expr COMMA exprlist
-# 	"""
-
 # testlist: test (',' test)* [',']
 def p_testlist(p):
 	"""testlist 	: test
@@ -1025,44 +892,12 @@ def p_testlist(p):
 	else:
 		p[0] = [p[1]] + p[3]
 
-# dictorsetmaker:  (test ':' test  (',' test ':' test)* [',']) 
-#					| (test  (',' test)* [',']) 
-def p_dictorsetmaker(p):
-	"""dictorsetmaker 	: testcolonlist
-						| testlist
-	"""
-
-# our new symbol
-def p_testcolonlist(p):
-	"""testcolonlist 	: test COLON test
-						| test COLON test COMMA
-						| test COLON test COMMA testcolonlist
-	"""
 
 # classdef: 'class' NAME ['(' [testlist] ')'] ':' suite
 def p_classdef(p):
 	"""classdef 	: CLASS NAME COLON suite
 					| CLASS NAME LPAREN RPAREN COLON suite
 					| CLASS NAME LPAREN testlist RPAREN COLON suite
-	"""
-
-# CHANGING GRAMMAR : Definitely dangerous. Need to revert. Probably need by fn call
-# arglist: (argument ',')* argument [',']
-# def p_arglist(p):
-# 	"""arglist 	: argument
-# 				| argument COMMA
-# 				| argument COMMA arglist
-# 	"""
-# argument: test | test '=' test
-# CHANGING GRAMMAR : Definitely dangerous. Need to revert. Probably need by fn call
-# def p_argument(p):
-# 	"""argument 	: test
-# 					| test EQUAL test
-# 	"""
-# testlist1: test (',' test)*
-def p_testlist1(p):
-	"""testlist1 	: test
-					| test COMMA testlist1
 	"""
 
 def p_stmts(p):
@@ -1110,7 +945,7 @@ class G1Parser(object):
 if __name__=="__main__":
 	z = G1Parser()
 	# filename = sys.argv[1]
-	filename = "../test/test1.py"
+	filename = "../test/func.py"
 	sourcefile = open(filename)
 	data = sourcefile.read()
 	sys.stderr = open('dump','w')
