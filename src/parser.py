@@ -19,6 +19,7 @@ def p_file_input(p):
 	addAttributeToCurrentScope('numParam', 0)
 	removeCurrentScope()
 	printCode()
+	# printST()
 
 # Our temporary symbol
 def p_single_stmt(p):
@@ -306,6 +307,7 @@ def p_expr_stmt(p):
 			p[0]['nextlist'] = []
 			try:
 				emit(getCurrentScope(),place, p[3]['place'], '', '=')
+				# TODO check if isList, pass one arg as ARRAY
 			except:		
 				referenceError(p)
 
@@ -503,8 +505,49 @@ def p_MarkerElse(p):
 ## CHANGING GRAMMAR : Removing ELSE from FOR statement
 ## CHANGING GRAMMAR : Simplifying for loop for single iterator
 def p_for_stmt(p): 
-	"""for_stmt 	:	FOR expr IN test COLON suite
+	"""for_stmt 	:	FOR atom IN atom COLON MarkerFor suite
 	"""
+	p[0] = dict()
+	p[0]['nextlist'] = merge(p[7].get('endlist', []), p[7].get('nextlist', []))
+	p[0]['nextlist'] = merge(p[6].get('falselist', []), p[0].get('nextlist', []))
+	emit(getCurrentScope(), p[6]['index'], p[6]['index'], 1, '+')
+	emit(getCurrentScope(),'', '', p[6]['quad'], 'GOTO')
+
+def p_MarkerFor(p):
+	"""MarkerFor : 
+	"""
+	p[0] = dict()
+	place = ''
+	try:
+		p[-2]['isList']
+	except:
+		notArrayError(p[-2])
+	if exists(p[-4]['name']):
+		place = p[-4]['place']
+		p[-4]['type'] = p[-2]['type']
+	else:
+		addIdentifier(p[-4]['name'], p[-2]['type'])
+		place = getNewTempVar()
+		addAttribute(p[-4]['name'], 'place', place)
+	index = getNewTempVar()
+	emit(getCurrentScope(), index, 0, '', '=')
+	array = getNewTempVar()
+	emit(getCurrentScope(), array, p[-2]['place'], 'ARRAY', '=')
+	size = len(p[-2]['place'])
+	length = getNewTempVar()
+	emit(getCurrentScope(), length, size, '', '=')
+	condition = getNewTempVar()
+	p[0]['quad'] = getNextQuad(getCurrentScope())
+	emit(getCurrentScope(), condition, index, size, '==')
+	p[0]['falselist'] = [getNextQuad(getCurrentScope())]
+	emit(getCurrentScope(), condition, 1, -1, 'COND_GOTO')
+	emit(getCurrentScope(), place, array+'['+index+']', '', '=')
+	p[0]['index'] = index
+	# suite will add code here
+	# then add GOTO condition check line in for_stmt
+	# patch this -1 in compound_stmt by merging its falselist in for_stmt
+
+
 # suite: simple_stmt | NEWLINE INDENT stmt+ DEDENT
 def p_suite(p):
 	"""suite 	: simple_stmt
@@ -880,6 +923,7 @@ def p_atom5(p):
 		p[0]['type'] = 'UNDEFINED'
 	else:
 		p[0] = p[2]
+	p[0]['isList'] = True 
 
 def p_atom6(p): 
 	"""atom	:	LPAREN RPAREN
@@ -1086,6 +1130,19 @@ def printError(p):
 			print "Print Error"
 	sys.exit()
 
+def notArrayError(p):
+	global haltExecution
+	haltExecution = True
+	try:
+		print "Not an array Error near '"+str(p.value)+"' in line "+str(p.lineno - programLineOffset)
+	except:
+		try:
+			print "Not an array in line "+str(p.lineno - programLineOffset)
+		except:
+			print "Not an array Error"
+	sys.exit()
+
+
 
 class G1Parser(object):
 	def __init__(self, mlexer=None):
@@ -1101,7 +1158,7 @@ class G1Parser(object):
 if __name__=="__main__":
 	z = G1Parser()
 	# filename = sys.argv[1]
-	filename = "../test/assignment.py"
+	filename = "../test/test1.py"
 	sourcefile = open(filename)
 	data = sourcefile.read()
 	sys.stderr = open('dump','w')
