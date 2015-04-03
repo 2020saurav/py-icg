@@ -92,7 +92,7 @@ def p_function_call(p):
 	p[0] = dict()
 	place = ''
 	if not exists(p[1]):
-		error('Reference', p[1])
+		error('Referencei', p[1])
 	else :
 		identifierType = getAttribute(p[1], 'type')
 		if identifierType == 'FUNCTION':
@@ -111,7 +111,7 @@ def p_function_call(p):
 			emit(getCurrentScope(), returnPlace, '', '', 'FUNCTION_RETURN')
 			p[0]['place'] = returnPlace
 		else :
-			error('Reference', p[1])
+			error('Referencej', p[1])
 	# p[0]['type'] = 'UNDEFINED'
 #varargslist: fpdef ['=' test] (',' fpdef ['=' test])* 
 def p_varargslist(p):
@@ -197,6 +197,7 @@ def p_expr_stmt(p):
 	"""expr_stmt 	: test EQUAL test
 					| test EQUAL function_call
 	"""
+	print "HI"
 	p[0] = dict()
 	place = ''
 	try:
@@ -206,41 +207,41 @@ def p_expr_stmt(p):
 			p[3]['isArray']
 			if p[1]['type'] != p[3]['type']:
 				error('Type', p)
-			width = getWidthFromType(p[1]['type'])
-			baseAddrLeft = getBaseAddress(getCurrentScope(), p[1]['name'])
-			indexLeft = getNewTempVar()
-			emit(getCurrentScope(), indexLeft, p[1]['place'], '', '=')
-			relativeAddrLeft = getNewTempVar()
-			emit(getCurrentScope(), relativeAddrLeft, indexLeft, width, '*')
-			absAddrLeft = getNewTempVar()
-			emit(getCurrentScope(), absAddrLeft, baseAddrLeft, relativeAddrLeft, '+')
+			# width = getWidthFromType(p[1]['type'])
+			# baseAddrLeft = getBaseAddress(getCurrentScope(), p[1]['name'])
+			# indexLeft = getNewTempVar()
+			# emit(getCurrentScope(), indexLeft, p[1]['place'], '', '=')
+			# relativeAddrLeft = getNewTempVar()
+			# emit(getCurrentScope(), relativeAddrLeft, indexLeft, width, '*')
+			absAddrLeft = p[1]['absAddr']
+			# emit(getCurrentScope(), absAddrLeft, baseAddrLeft, relativeAddrLeft, '+')
 
-			baseAddrRight = getBaseAddress(getCurrentScope(), p[3]['name'])
-			indexRight = getNewTempVar()
-			emit(getCurrentScope(), indexRight, p[3]['place'], '', '=')
-			relativeAddrRight = getNewTempVar()
-			emit(getCurrentScope(), relativeAddrRight, indexRight, width, '*')
-			absAddrRight = getNewTempVar()
-			emit(getCurrentScope(), absAddrRight, baseAddrRight, relativeAddrRight, '+')
+			# baseAddrRight = getBaseAddress(getCurrentScope(), p[3]['name'])
+			# indexRight = getNewTempVar()
+			# emit(getCurrentScope(), indexRight, p[3]['place'], '', '=')
+			# relativeAddrRight = getNewTempVar()
+			# emit(getCurrentScope(), relativeAddrRight, indexRight, width, '*')
+			# absAddrRight = getNewTempVar()
+			# emit(getCurrentScope(), absAddrRight, baseAddrRight, relativeAddrRight, '+')
 			value = getNewTempVar()
-			emit(getCurrentScope(), value, absAddrRight, '', 'LW')
+			emit(getCurrentScope(), value, p[3]['place'], '', '=')
 			emit(getCurrentScope(), absAddrLeft, value, '', 'SW')
 		except:
 			# a[i] = x
 			if p[1]['type'] != p[3]['type']:
 				error('Type', p)
-			width = getWidthFromType(p[1]['type'])
-			baseAddr = getBaseAddress(getCurrentScope(), p[1]['name'])
-			index = getNewTempVar()
-			emit(getCurrentScope(), index, p[1]['place'], '', '=')
-			relativeAddr = getNewTempVar()
-			emit(getCurrentScope(), relativeAddr, index, width, '*')
-			absAddr = getNewTempVar()
-			emit(getCurrentScope(), absAddr, baseAddr, relativeAddr, '+')
+			# width = getWidthFromType(p[1]['type'])
+			# baseAddr = getBaseAddress(getCurrentScope(), p[1]['name'])
+			# index = getNewTempVar()
+			# emit(getCurrentScope(), index, p[1]['place'], '', '=')
+			# relativeAddr = getNewTempVar()
+			# emit(getCurrentScope(), relativeAddr, index, width, '*')
+			absAddr = p[1]['absAddr']
+			# emit(getCurrentScope(), absAddr, baseAddr, relativeAddr, '+')
 			try:
 				emit(getCurrentScope(), absAddr, p[3]['place'], '', 'SW')
 			except:		
-				error('Reference', p)
+				error('Referencek', p)
 		
 	except:
 		if haltExecution:
@@ -248,16 +249,16 @@ def p_expr_stmt(p):
 		try:
 			# x = a[i]
 			p[3]['isArray']
-			width = getWidthFromType(p[3]['type'])
-			baseAddr = getBaseAddress(getCurrentScope(), p[3]['name'])
-			index = getNewTempVar()
-			emit(getCurrentScope(), index, p[3]['place'], '', '=')
-			relativeAddr = getNewTempVar()
-			emit(getCurrentScope(), relativeAddr, index, width, '*')
-			absAddr = getNewTempVar()
-			emit(getCurrentScope(), absAddr, baseAddr, relativeAddr, '+')
+			# width = getWidthFromType(p[3]['type'])
+			# baseAddr = getBaseAddress(getCurrentScope(), p[3]['name'])
+			# index = getNewTempVar()
+			# emit(getCurrentScope(), index, p[3]['place'], '', '=')
+			# relativeAddr = getNewTempVar()
+			# emit(getCurrentScope(), relativeAddr, index, width, '*')
+			# absAddr = getNewTempVar()
+			# emit(getCurrentScope(), absAddr, baseAddr, relativeAddr, '+')
 			value = getNewTempVar()
-			emit(getCurrentScope(), value, absAddr, '', 'LW')
+			emit(getCurrentScope(), value, p[3]['absAddr'], '', 'LW')
 
 			if exists(p[1]['name']):
 				addAttribute(p[1]['name'], 'type', p[3]['type'])
@@ -299,7 +300,8 @@ def p_expr_stmt(p):
 				emit(getCurrentScope(),place, p[3]['place'], '', '=')
 				# TODO check if isList, pass one arg as ARRAY
 			except:		
-				error('Reference', p)
+				error('Referencel', p)
+	print "Bye"
 
 
 
@@ -546,20 +548,21 @@ def p_suite(p):
 	else:
 		p[0] = p[3]
 
+
+#TODO
 def p_array(p):
-	"""test 	: atom LSQB test_expr RSQB
-				| test_expr 
+	"""test 	: test_expr 
 	"""
 	if len(p) == 2:
 		p[0] = p[1]
 	else :
 		if p[3]['type'] != 'NUMBER':
-			error('Reference', p)
+			error('Reference1', p)
 		else:
 			try:
 				p[1]['isIdentifier']
 			except:
-				error('Reference', p[1])
+				error('Reference2', p[1])
 			# set values to propagate above uptil test = test.
 			# to handle a[i] = x, x = a[i] and a[i] = a[j]
 			p[0] = dict()
@@ -592,7 +595,7 @@ def p_or_test(p):
 			emit(getCurrentScope(),p[0]['place'], p[1]['place'], p[3]['place'], p[2])
 		else:
 			if(p[1]['type']=='REFERENCE_ERROR' or p[3]['type']=='REFERENCE_ERROR'):
-				error('Reference', p)
+				error('Reference3', p)
 			error('Type', p)		
 
 # and_test: not_test ('and' not_test)*
@@ -610,7 +613,7 @@ def p_and_test(p):
 			emit(getCurrentScope(),p[0]['place'], p[1]['place'], p[3]['place'], p[2])
 		else:
 			if(p[1]['type']=='REFERENCE_ERROR' or p[3]['type']=='REFERENCE_ERROR'):
-				error('Reference', p)
+				error('Reference4', p)
 			error('Type', p)
 
 # not_test: 'not' not_test | comparison
@@ -628,7 +631,7 @@ def p_not_test(p):
 			emit(getCurrentScope(),p[0]['place'], p[2]['place'],'', p[1])
 		else:
 			if(p[2]['type']=='REFERENCE_ERROR'):
-				error('Reference', p)
+				error('Reference5', p)
 			# print 4
 			error('Type', p)
 
@@ -644,7 +647,7 @@ def p_comparision(p):
 			# okay : Nothing to do here
 		else:
 			if(p[1]['type']=='REFERENCE_ERROR' or p[3]['type']=='REFERENCE_ERROR'):
-				error('Reference', p)
+				error('Reference6', p)
 			# print 5
 			error('Type', p)
 		p[0] = dict()
@@ -679,7 +682,7 @@ def p_expr(p):
 			emit(getCurrentScope(),p[0]['place'], p[1]['place'], p[3]['place'], p[2])
 		else:
 			if(p[1]['type']=='REFERENCE_ERROR' or p[3]['type']=='REFERENCE_ERROR'):
-				error('Reference', p)
+				error('Reference7', p)
 			error('Type', p)
 
 # xor_expr: and_expr ('^' and_expr)*
@@ -697,7 +700,7 @@ def p_xor_expr(p):
 			emit(getCurrentScope(),p[0]['place'], p[1]['place'], p[3]['place'], p[2])
 		else:
 			if(p[1]['type']=='REFERENCE_ERROR' or p[3]['type']=='REFERENCE_ERROR'):
-				error('Reference', p)
+				error('Reference8', p)
 			error('Type', p)
 
 # and_expr: shift_expr ('&' shift_expr)*
@@ -715,7 +718,7 @@ def p_and_expr(p):
 			emit(getCurrentScope(),p[0]['place'], p[1]['place'], p[3]['place'], p[2])
 		else:
 			if(p[1]['type']=='REFERENCE_ERROR' or p[3]['type']=='REFERENCE_ERROR'):
-				error('Reference', p)
+				error('Reference9', p)
 			error('Type', p)
 
 # shift_expr: arith_expr (('<<'|'>>') arith_expr)*
@@ -734,7 +737,7 @@ def p_shift_expr(p):
 			emit(getCurrentScope(),p[0]['place'], p[1]['place'], p[3]['place'], p[2])
 		else:
 			if(p[1]['type']=='REFERENCE_ERROR' or p[3]['type']=='REFERENCE_ERROR'):
-				error('Reference', p)
+				error('Referencea', p)
 			error('Type', p)
 
 # arith_expr: term (('+'|'-') term)*
@@ -753,7 +756,7 @@ def p_arith_expr(p):
 			emit(getCurrentScope(),p[0]['place'], p[1]['place'], p[3]['place'], p[2])
 		else:
 			if(p[1]['type']=='REFERENCE_ERROR' or p[3]['type']=='REFERENCE_ERROR'):
-				error('Reference', p)
+				error('Referenceb', p)
 			error('Type', p)
 
 
@@ -774,7 +777,7 @@ def p_term(p):
 			emit(getCurrentScope(), p[0]['place'], p[1]['place'], p[3]['place'], p[2])
 		else:
 			if(p[1]['type']=='REFERENCE_ERROR' or p[3]['type']=='REFERENCE_ERROR'):
-				error('Reference', p)
+				error('Referencec', p)
 			error('Type', p)
 
 # factor: ('+'|'-') factor | power
@@ -795,8 +798,46 @@ def p_factor(p):
 # power: atom trailer*
 def p_power(p):
 	"""power 	: atom
+				| atom LSQB test RSQB
+
 	"""
-	p[0] = p[1]
+	if len(p) == 2:
+		p[0] = p[1]
+	else :
+		if p[3]['type'] != 'NUMBER':
+			error('Referenced', p)
+		else:
+			try:
+				p[1]['isIdentifier']
+			except:
+				error('Referencee', p[1])
+			# set values to propagate above uptil test = test.
+			# to handle a[i] = x, x = a[i] and a[i] = a[j]
+			p[0] = dict()
+			# p[0]['name'] = p[1]['name']
+			p[0]['type'] = p[1]['type']
+			# p[0]['isArray'] = True
+			# p[0]['place'] = p[3]['place']
+			try:
+				# p[1]['isArray']
+				# TODO add adtribute to isArray to NAME in symbol table
+				width = getWidthFromType(p[1]['type'])
+				baseAddr = getBaseAddress(getCurrentScope(), p[1]['name'])
+				index = getNewTempVar()
+				emit(getCurrentScope(), index, p[1]['place'], '', '=')
+				relativeAddr = getNewTempVar()
+				emit(getCurrentScope(), relativeAddr, index, width, '*')
+				absAddr = getNewTempVar()
+				emit(getCurrentScope(), absAddr, baseAddr, relativeAddr, '+')
+				value = getNewTempVar()
+				emit(getCurrentScope(), value, absAddr, '', 'LW')
+				p[0]['place'] = value
+				p[0]['absAddr'] = absAddr
+				p[0]['isArray'] = True
+				p[0]['name'] = p[1]['name']
+			except:
+				error('Referencef', p[1])
+
 
 def p_atom1(p):
 	'''atom :	NAME
@@ -874,7 +915,7 @@ def p_listmaker(p):
 			p[0]['place'] = [p[1]['place']]
 			p[0]['type'] = p[1]['type']
 		except:
-			error('Reference', p)
+			error('Referenceg', p)
 	else:
 		if p[3]['type'] != p[1]['type']:
 			error('Type', p)
@@ -883,7 +924,7 @@ def p_listmaker(p):
 				p[0]['place'] = [p[1]['place']] + p[3]['place']
 				p[0]['type'] = p[1]['type']
 			except:
-				error('Reference', p)
+				error('Referenceh', p)
 
 # testlist_comp: test (',' test)* [','] 
 def p_testlist_comp(p):
@@ -966,7 +1007,7 @@ if __name__=="__main__":
 	initializeTF()	
 	z = G1Parser()
 	# filename = sys.argv[1]
-	filename = "../test/expr.py"
+	filename = "../test/extra.py"
 	sourcefile = open(filename)
 	data = sourcefile.read()
 	sys.stderr = open('dump','w')
