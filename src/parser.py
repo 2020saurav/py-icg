@@ -197,7 +197,6 @@ def p_expr_stmt(p):
 	"""expr_stmt 	: test EQUAL test
 					| test EQUAL function_call
 	"""
-	print "HI"
 	p[0] = dict()
 	place = ''
 	try:
@@ -301,7 +300,6 @@ def p_expr_stmt(p):
 				# TODO check if isList, pass one arg as ARRAY
 			except:		
 				error('Referencel', p)
-	print "Bye"
 
 
 
@@ -824,7 +822,7 @@ def p_power(p):
 				width = getWidthFromType(p[1]['type'])
 				baseAddr = getBaseAddress(getCurrentScope(), p[1]['name'])
 				index = getNewTempVar()
-				emit(getCurrentScope(), index, p[1]['place'], '', '=')
+				emit(getCurrentScope(), index, p[3]['place'], '', '=')
 				relativeAddr = getNewTempVar()
 				emit(getCurrentScope(), relativeAddr, index, width, '*')
 				absAddr = getNewTempVar()
