@@ -45,6 +45,10 @@ def addScope(scopeName):
 		"type"			: "FUNCTION",
 		"returnType"	: "UNDEFINED"
 	}
+	addIdentifier('True', 'BOOLEAN')
+	addAttribute('True', scopeName, 1)
+	addIdentifier('False', 'BOOLEAN')
+	addAttribute('False', scopeName, 0)	
 	scopeStack.append(currentScope[scopeName])
 
 	# start new relative addressing

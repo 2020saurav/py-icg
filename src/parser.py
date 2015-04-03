@@ -276,6 +276,12 @@ def p_expr_stmt(p):
 
 		except:
 			# x = y
+			try:
+				p[3]['isList']
+				p[1]['isList'] = True
+			except:
+				pass
+
 			if exists(p[1]['name']):
 				addAttribute(p[1]['name'], 'type', p[3]['type'])
 				if existsInCurrentScope(p[1]['name']):
@@ -287,12 +293,14 @@ def p_expr_stmt(p):
 				addIdentifier(p[1]['name'], p[3]['type'])
 				place = getNewTempVar()
 				addAttribute(p[1]['name'], getCurrentScope(), place)
+
 			p[0]['nextlist'] = []
 			try:
 				emit(getCurrentScope(),place, p[3]['place'], '', '=')
 				# TODO check if isList, pass one arg as ARRAY
 			except:		
 				error('Reference', p)
+
 
 
 # augassign: ('+=' | '-=' | '*=' | '/=' | '%=' | '**=' | '//=')
@@ -485,7 +493,7 @@ def p_MarkerElse(p):
 # for_stmt: 'for' exprlist 'in' testlist ':' suite ['else' ':' suite]
 
 def p_for_stmt(p): 
-	"""for_stmt 	:	FOR atom IN atom COLON MarkerFor suite
+	"""for_stmt 	:	FOR atom IN test COLON MarkerFor suite
 	"""
 	p[0] = dict()
 	p[0]['nextlist'] = merge(p[7].get('endlist', []), p[7].get('nextlist', []))
@@ -498,6 +506,7 @@ def p_MarkerFor(p):
 	"""
 	p[0] = dict()
 	place = ''
+	print p[-2]
 	try:
 		p[-2]['isList']
 	except:
@@ -630,7 +639,7 @@ def p_comparision(p):
 	if len(p)==2:
 		p[0] = p[1]
 	elif len(p)==4:
-		if p[1]['type'] in ['NUMBER', 'BOOLEAN'] and  p[3]['type'] in ['NUMBER', 'BOOLEAN']:
+		if p[1]['type'] in ['NUMBER', 'BOOLEAN', 'UNDEFINED'] and  p[3]['type'] in ['NUMBER', 'BOOLEAN', 'UNDEFINED']:
 			pass
 			# okay : Nothing to do here
 		else:
@@ -799,6 +808,10 @@ def p_atom1(p):
 		p[0]['type'] = getAttribute(p[1], 'type')
 		p[0]['place'] = getAttribute(p[1], getCurrentScope())
 		p[0]['isIdentifier'] = True
+		try:
+			p[0]['isList'] = getAttribute(p[1], 'isList')
+		except:
+			pass
 		# TODO may need to add more keys like offset and scopename
 	else:
 		p[0]['name'] = p[1]
@@ -839,7 +852,8 @@ def p_atom5(p):
 		p[0]['type'] = 'UNDEFINED'
 	else:
 		p[0] = p[2]
-	p[0]['isList'] = True 
+	p[0]['isList'] = True
+	# print p[0]
 
 def p_atom6(p): 
 	"""atom	:	LPAREN RPAREN
@@ -941,11 +955,18 @@ class G1Parser(object):
 		self.mlexer.input(code)
 		result = self.parser.parse(lexer = self.mlexer, debug=True)
 		return result
+def initializeTF():
+	scopeName = getCurrentScope()
+	addIdentifier('True', 'BOOLEAN')
+	addAttribute('True', scopeName, 1)
+	addIdentifier('False', 'BOOLEAN')
+	addAttribute('False', scopeName, 0)
 
 if __name__=="__main__":
+	initializeTF()	
 	z = G1Parser()
 	# filename = sys.argv[1]
-	filename = "../test/func.py"
+	filename = "../test/expr.py"
 	sourcefile = open(filename)
 	data = sourcefile.read()
 	sys.stderr = open('dump','w')

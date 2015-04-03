@@ -3,6 +3,7 @@ if a < 200:
 	c = 2000
 	d = 200*10
 	isEqual = (c==d)
-	if isEqual == True:
+	if isEqual==True:
 		print "Hello"
-c = 30
+	else:
+		d = 1000
