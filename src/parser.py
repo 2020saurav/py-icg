@@ -276,9 +276,11 @@ def p_expr_stmt(p):
 
 		except:
 			# x = y
+			isList = False
 			try:
 				p[3]['isList']
 				p[1]['isList'] = True
+				isList = True
 			except:
 				pass
 
@@ -296,8 +298,10 @@ def p_expr_stmt(p):
 
 			p[0]['nextlist'] = []
 			try:
-				emit(getCurrentScope(),place, p[3]['place'], '', '=')
-				# TODO check if isList, pass one arg as ARRAY
+				if isList:
+					emit(getCurrentScope(),place, p[3]['place'], 'ARRAY', '=')
+				else:
+					emit(getCurrentScope(),place, p[3]['place'], '', '=')
 			except:		
 				error('Referencel', p)
 
