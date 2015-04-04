@@ -967,11 +967,12 @@ def p_testlist(p):
 
 
 # classdef: 'class' NAME ['(' [testlist] ')'] ':' suite
-def p_classdef(p):
-	"""classdef 	: CLASS NAME COLON suite
-					| CLASS NAME LPAREN RPAREN COLON suite
-					| CLASS NAME LPAREN testlist RPAREN COLON suite
-	"""
+# def p_classdef(p):
+# 	"""classdef 	: CLASS NAME COLON suite
+# 					| CLASS NAME LPAREN RPAREN COLON suite
+# 					| CLASS NAME LPAREN testlist RPAREN COLON suite
+# 	"""
+# 	error('SYNTAX', p)
 
 def p_stmts(p):
 	"""stmts 	: stmt stmts
@@ -1024,8 +1025,8 @@ def initializeTF():
 if __name__=="__main__":
 	initializeTF()	
 	z = G1Parser()
-	# filename = sys.argv[1]
-	filename = "../test/for.py"
+	filename = sys.argv[1]
+	# filename = "../test/for.py"
 	sourcefile = open(filename)
 	data = sourcefile.read()
 	sys.stderr = open('dump','w')

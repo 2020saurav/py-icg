@@ -1,7 +1,4 @@
 import pprint
-'''
-DOCUMENTATION goes here
-'''
 
 symbolTable = {
 	"program" : {

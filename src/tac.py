@@ -52,10 +52,3 @@ def noop(functionName, locationList):
 	global code
 	for position in locationList:
 		code[functionName][position][3] = 'NOOP'
-
-
-
-
-	
-
-
