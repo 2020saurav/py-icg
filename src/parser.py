@@ -299,7 +299,7 @@ def p_expr_stmt(p):
 			p[0]['nextlist'] = []
 			try:
 				if isList:
-					emit(getCurrentScope(),place, p[3]['place'], 'ARRAY', '=')
+					emit(getCurrentScope(),place, p[3]['name'], 'ARRAY', '=')
 				else:
 					emit(getCurrentScope(),place, p[3]['place'], '', '=')
 			except:		
@@ -510,7 +510,7 @@ def p_MarkerFor(p):
 	"""
 	p[0] = dict()
 	place = ''
-	print p[-2]
+	# print p[-2]
 	try:
 		p[-2]['isList']
 	except:
@@ -534,7 +534,17 @@ def p_MarkerFor(p):
 	emit(getCurrentScope(), condition, index, length, '==')
 	p[0]['falselist'] = [getNextQuad(getCurrentScope())]
 	emit(getCurrentScope(), condition, 1, -1, 'COND_GOTO')
-	emit(getCurrentScope(), place, array+'['+index+']', '', '=')
+
+	width = getWidthFromType(p[-2]['type'])
+	baseAddr = getBaseAddress(getCurrentScope(), p[-2]['name'])
+	relativeAddr = getNewTempVar()
+	emit(getCurrentScope(), relativeAddr, index, width, '*')
+	absAddr = getNewTempVar()
+	emit(getCurrentScope(), absAddr, baseAddr, relativeAddr, '+')
+	emit(getCurrentScope(), place, absAddr, '', 'LW')
+
+
+	# emit(getCurrentScope(), place, array+'['+index+']', '', '=')
 	p[0]['index'] = index
 	# suite will add code here
 	# then add GOTO condition check line in for_stmt
@@ -896,6 +906,12 @@ def p_atom5(p):
 	else:
 		p[0] = p[2]
 	p[0]['isList'] = True
+	p[0]['name'] = getNewTempVar()
+	addIdentifier(p[0]['name'], p[0]['type'])
+	addAttribute(p[0]['name'], 'place', p[0]['place'])
+	addAttribute(p[0]['name'], 'isArray', 'True')
+
+	emit(getCurrentScope(), p[0]['name'], p[0]['place'], 'ARRAY', '=')
 	# print p[0]
 
 def p_atom6(p): 
@@ -1009,7 +1025,7 @@ if __name__=="__main__":
 	initializeTF()	
 	z = G1Parser()
 	# filename = sys.argv[1]
-	filename = "../test/extra.py"
+	filename = "../test/for.py"
 	sourcefile = open(filename)
 	data = sourcefile.read()
 	sys.stderr = open('dump','w')
